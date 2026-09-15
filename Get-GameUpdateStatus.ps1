@@ -29,7 +29,7 @@ if (Test-Path $CacheFile) {
 
     $Cache = Get-Item $CacheFile
 
-    $AgeMinu&tes = ((Get-Date) - $Cache.LastWriteTime).TotalMinutes
+    $AgeMinutes = ((Get-Date) - $Cache.LastWriteTime).TotalMinutes
 
     if ($AgeMinutes -lt $CacheDurationMinutes) {
 
