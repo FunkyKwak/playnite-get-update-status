@@ -113,6 +113,19 @@ Copy-Item `
     -Force
 
 
+
+Write-Host "=== Contenu du staging extension ==="
+Get-ChildItem $ExtensionStage -Recurse | ForEach-Object {
+    Write-Host $_.FullName
+}
+
+Write-Host "=== extension.yaml ==="
+Get-Content (Join-Path $ExtensionStage "extension.yaml")
+
+Write-Host "=== Toolbox ==="
+& $Toolbox --help
+
+
 # ----------------------------------------------------------------------
 # Packaging .pext
 # ----------------------------------------------------------------------
