@@ -21,10 +21,10 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Download Playnite 10.56
+      - name: Download Playnite 10.60
         shell: pwsh
         run: |
-          $url = "https://github.com/JosefNemec/Playnite/releases/download/10.56/Playnite_10.56.zip"
+          $url = "https://github.com/JosefNemec/Playnite/archive/refs/tags/10.60.zip"
           $zip = "$env:RUNNER_TEMP\Playnite.zip"
           $dir = "$env:RUNNER_TEMP\Playnite"
 
