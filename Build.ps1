@@ -1,9 +1,19 @@
+param(
+    [string]$Toolbox = $null
+)
+
 $ErrorActionPreference = "Stop"
 
 $ProjectDir = $PSScriptRoot
 
 $ProjectFile = Join-Path $ProjectDir "GameUpdateStatus.csproj"
-$Toolbox = Join-Path $env:LOCALAPPDATA "Playnite\Toolbox.exe"
+
+if (-not $Toolbox) {
+    $Toolbox = Join-Path $env:LOCALAPPDATA "Playnite\Toolbox.exe"
+}
+if (-not (Test-Path $Toolbox)) {
+    throw "Playnite Toolbox introuvable : $Toolbox"
+}
 
 $BinDir = Join-Path $ProjectDir "bin"
 $ReleaseDir = Join-Path $BinDir "Release"

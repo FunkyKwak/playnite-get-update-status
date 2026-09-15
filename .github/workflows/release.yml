@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Download Playnite Toolbox
+        shell: pwsh
+        run: |
+          Invoke-WebRequest `
+            -Uri "https://playnite.link/download/Toolbox.exe" `
+            -OutFile "$env:RUNNER_TEMP\Toolbox.exe"
+
+      - name: Build packages
+        shell: pwsh
+        run: |
+          .\Build.ps1 -Toolbox "$env:RUNNER_TEMP\Toolbox.exe"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            bin/Release/*.pext
+            bin/Release/*.pthm
+          generate_release_notes: true
