@@ -21,35 +21,10 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Download Playnite 10.60
-        shell: pwsh
-        run: |
-          $url = "https://github.com/JosefNemec/Playnite/archive/refs/tags/10.60.zip"
-          $zip = "$env:RUNNER_TEMP\Playnite.zip"
-          $dir = "$env:RUNNER_TEMP\Playnite"
-
-          Invoke-WebRequest -Uri $url -OutFile $zip
-          Expand-Archive -Path $zip -DestinationPath $dir -Force
-
-          Write-Host "Playnite extrait dans : $dir"
-          Get-ChildItem $dir -Recurse -Filter Toolbox.exe
-
       - name: Build packages
         shell: pwsh
         run: |
-          $toolbox = Get-ChildItem `
-            "$env:RUNNER_TEMP\Playnite" `
-            -Recurse `
-            -Filter Toolbox.exe |
-            Select-Object -First 1 -ExpandProperty FullName
-
-          if (-not $toolbox) {
-            throw "Toolbox.exe introuvable dans le package Playnite."
-          }
-
-          Write-Host "Toolbox utilisé : $toolbox"
-
-          .\Build.ps1 -Toolbox $toolbox
+          .\Build.ps1 -Toolbox ".\lib\Toolbox.exe"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
