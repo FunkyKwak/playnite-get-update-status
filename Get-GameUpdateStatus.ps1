@@ -1,27 +1,56 @@
 ﻿# ============================================
-# Steam Update Status - V3
+# Steam Update Status - V4
+# ============================================
+
+$CacheFile = Join-Path $PSScriptRoot "update-status.json"
+$CacheDurationMinutes = 30
+
+# ============================================
+# Vérification du cache
+# ============================================
+
+if (Test-Path $CacheFile) {
+
+    $Cache = Get-Item $CacheFile
+
+    $AgeMinutes = ((Get-Date) - $Cache.LastWriteTime).TotalMinutes
+
+    if ($AgeMinutes -lt $CacheDurationMinutes) {
+
+        Write-Host "Cache valide ($([math]::Round($AgeMinutes, 1)) min)." -ForegroundColor Cyan
+        Write-Host ""
+
+        Get-Content $CacheFile
+
+        exit
+    }
+}
+
+# ============================================
+# Recherche de Steam
 # ============================================
 
 $SteamPath = "C:\Program Files (x86)\Steam"
 
-# Recherche du dossier Steam si le chemin standard n'existe pas
 if (-not (Test-Path $SteamPath)) {
+
     $SteamPath = (Get-ItemProperty `
         "HKLM:\SOFTWARE\WOW6432Node\Valve\Steam" `
         -ErrorAction SilentlyContinue).InstallPath
 }
 
 if (-not $SteamPath -or -not (Test-Path $SteamPath)) {
+
     Write-Host "Steam introuvable." -ForegroundColor Red
-    exit
+    exit 1
 }
 
 Write-Host "Steam : $SteamPath"
 Write-Host ""
 
-# --------------------------------------------
-# Recherche des bibliothèques Steam
-# --------------------------------------------
+# ============================================
+# Recherche des bibliothèques
+# ============================================
 
 $LibraryFolders = @()
 
@@ -37,7 +66,6 @@ if (Test-Path $LibraryFile) {
 
     $Content = Get-Content $LibraryFile -Raw
 
-    # Extrait les chemins des bibliothèques
     $Paths = [regex]::Matches(
         $Content,
         '"path"\s+"([^"]+)"'
@@ -60,11 +88,12 @@ if (Test-Path $LibraryFile) {
 Write-Host "Bibliothèques trouvées : $($LibraryFolders.Count)"
 Write-Host ""
 
-# --------------------------------------------
-# Fonction : BuildId public Steam
-# --------------------------------------------
+# ============================================
+# Fonction : BuildId public
+# ============================================
 
 function Get-SteamPublicBuildId {
+
     param(
         [string]$AppId
     )
@@ -78,20 +107,16 @@ function Get-SteamPublicBuildId {
             -Method Get `
             -TimeoutSec 15
 
-        # Selon la structure de la réponse,
-        # les données peuvent être sous data
         $AppInfo = $Response.data.$AppId
 
-        if (-not $AppInfo) {
-            return $null
+        if ($AppInfo) {
+
+            $BuildId = $AppInfo.depots.branches.public.buildid
+
+            if ($BuildId) {
+                return [string]$BuildId
+            }
         }
-
-        $BuildId = $AppInfo.depots.branches.public.buildid
-
-        if ($BuildId) {
-            return [string]$BuildId
-        }
-
     }
     catch {
         return $null
@@ -100,9 +125,9 @@ function Get-SteamPublicBuildId {
     return $null
 }
 
-# --------------------------------------------
+# ============================================
 # Recherche des jeux installés
-# --------------------------------------------
+# ============================================
 
 $Manifests = foreach ($Library in $LibraryFolders) {
 
@@ -113,20 +138,22 @@ $Manifests = foreach ($Library in $LibraryFolders) {
         -ErrorAction SilentlyContinue
 }
 
-Write-Host "Jeux Steam installés trouvés : $($Manifests.Count)"
+Write-Host "Jeux Steam installés : $($Manifests.Count)"
 Write-Host ""
 
-# --------------------------------------------
+# ============================================
 # Analyse
-# --------------------------------------------
+# ============================================
 
-$Results = foreach ($Manifest in $Manifests) {
+$Results = @()
+
+foreach ($Manifest in $Manifests) {
 
     $AppId = $Manifest.BaseName -replace "appmanifest_", ""
 
     $Content = Get-Content $Manifest.FullName -Raw
 
-    # Nom du jeu
+    # Nom
     $NameMatch = [regex]::Match(
         $Content,
         '"name"\s+"([^"]+)"'
@@ -147,13 +174,13 @@ $Results = foreach ($Manifest in $Manifests) {
 
     if (-not $BuildMatch.Success) {
 
-        [PSCustomObject]@{
+        $Results += [PSCustomObject]@{
             AppId       = $AppId
             Name        = $Name
             LocalBuild  = $null
             PublicBuild = $null
             Status      = "UNKNOWN"
-            Reason      = "BuildId local introuvable"
+            CheckedAt   = (Get-Date).ToString("o")
         }
 
         continue
@@ -170,56 +197,60 @@ $Results = foreach ($Manifest in $Manifests) {
     if (-not $PublicBuild) {
 
         Write-Host "  Public : ?"
-        Write-Host "  Etat   : UNKNOWN" -ForegroundColor Yellow
+        Write-Host "  Etat   : ⚪ Inconnu" -ForegroundColor DarkYellow
         Write-Host ""
 
-        [PSCustomObject]@{
-            AppId       = $AppId
-            Name        = $Name
-            LocalBuild  = $LocalBuild
-            PublicBuild = $null
-            Status      = "UNKNOWN"
-            Reason      = "Impossible de récupérer le build public"
-        }
-
-        continue
+        $Status = "UNKNOWN"
     }
+    elseif ($LocalBuild -eq $PublicBuild) {
 
-    Write-Host "  Public : $PublicBuild"
-
-    if ($LocalBuild -eq $PublicBuild) {
+        Write-Host "  Public : $PublicBuild"
+        Write-Host "  Etat   : 🟢 À jour" -ForegroundColor Green
+        Write-Host ""
 
         $Status = "UP_TO_DATE"
-        Write-Host "  Etat   : 🟢 À jour" -ForegroundColor Green
-
     }
     else {
 
-        $Status = "UPDATE_AVAILABLE"
+        Write-Host "  Public : $PublicBuild"
         Write-Host "  Etat   : 🟠 Mise à jour disponible" -ForegroundColor Yellow
+        Write-Host ""
+
+        $Status = "UPDATE_AVAILABLE"
     }
 
-    Write-Host ""
-
-    [PSCustomObject]@{
+    $Results += [PSCustomObject]@{
         AppId       = $AppId
         Name        = $Name
         LocalBuild  = $LocalBuild
         PublicBuild = $PublicBuild
         Status      = $Status
-        Reason      = ""
+        CheckedAt   = (Get-Date).ToString("o")
     }
 }
 
-# --------------------------------------------
+# ============================================
+# Création du cache
+# ============================================
+
+$Results |
+    ConvertTo-Json -Depth 5 |
+    Set-Content `
+        -Path $CacheFile `
+        -Encoding UTF8
+
+# ============================================
 # Résumé
-# --------------------------------------------
+# ============================================
 
 Write-Host ""
 Write-Host "============================================"
-Write-Host "Résumé"
+Write-Host "Résultats"
 Write-Host "============================================"
 
 $Results |
-    Select-Object AppId, Name, LocalBuild, PublicBuild, Status |
+    Select-Object AppId, Name, Status |
     Format-Table -AutoSize
+
+Write-Host ""
+Write-Host "Cache : $CacheFile"
