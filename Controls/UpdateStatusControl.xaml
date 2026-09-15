@@ -1,7 +1,8 @@
-<PluginUserControl
+<playnite:PluginUserControl
     x:Class="GameUpdateStatus.Controls.UpdateStatusControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:playnite="clr-namespace:Playnite.SDK.Controls;assembly=Playnite.SDK"
     HorizontalAlignment="Stretch"
     VerticalAlignment="Stretch">
 
@@ -11,4 +12,4 @@
         Fill="{Binding StatusBrush}"
         ToolTip="{Binding StatusText}" />
 
-</PluginUserControl>
+</playnite:PluginUserControl>
