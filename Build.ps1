@@ -114,13 +114,30 @@ Copy-Item `
 
 
 
+
+# ----------------------------------------------------------------------
+# DEBUG
+# ----------------------------------------------------------------------
+Write-Host ""
+Write-Host "=== DEBUG staging extension ==="
+
+Write-Host "ExtensionPackageDir = $ExtensionPackageDir"
+Write-Host ""
+
+if (-not (Test-Path $ExtensionPackageDir)) {
+    throw "Dossier staging introuvable."
+}
+
+
 Write-Host "=== Contenu du staging extension ==="
-Get-ChildItem $ExtensionStage -Recurse | ForEach-Object {
+Get-ChildItem $ExtensionPackageDir -Force | Format-Table Name, Length, Mode
+Write-Host "=== Contenu du staging extension ==="
+Get-ChildItem $ExtensionPackageDir -Recurse | ForEach-Object {
     Write-Host $_.FullName
 }
 
 Write-Host "=== extension.yaml ==="
-Get-Content (Join-Path $ExtensionStage "extension.yaml")
+Get-Content (Join-Path $ExtensionPackageDir "extension.yaml")
 
 Write-Host "=== Toolbox ==="
 & $Toolbox --help
