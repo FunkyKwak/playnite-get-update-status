@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="extension.yaml">
+    <None Update="extension.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

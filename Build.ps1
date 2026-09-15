@@ -37,8 +37,8 @@ if (-not (Test-Path $ProjectFile)) {
     throw "Projet introuvable : $ProjectFile"
 }
 
-if (-not (Test-Path (Join-Path $ProjectDir "extension.yaml"))) {
-    throw "extension.yaml introuvable."
+if (-not (Test-Path (Join-Path $ProjectDir "extension.toml"))) {
+    throw "extension.toml introuvable."
 }
 
 if (-not (Test-Path $ThemeSourceDir)) {
@@ -92,55 +92,8 @@ if ($LASTEXITCODE -ne 0) {
 # ----------------------------------------------------------------------
 # Préparation du package extension
 # ----------------------------------------------------------------------
+$ExtensionPackageDir = Join-Path $ReleaseDir "net462"
 
-Write-Host ""
-Write-Host "=== Préparation de l'extension ==="
-
-Copy-Item `
-    (Join-Path $ProjectDir "extension.yaml") `
-    $ExtensionPackageDir `
-    -Force
-
-$DllPath = Join-Path $ReleaseDir "net462\GameUpdateStatus.dll"
-
-if (-not (Test-Path $DllPath)) {
-    throw "DLL compilée introuvable : $DllPath"
-}
-
-Copy-Item `
-    $DllPath `
-    $ExtensionPackageDir `
-    -Force
-
-
-
-
-# ----------------------------------------------------------------------
-# DEBUG
-# ----------------------------------------------------------------------
-Write-Host ""
-Write-Host "=== DEBUG staging extension ==="
-
-Write-Host "ExtensionPackageDir = $ExtensionPackageDir"
-Write-Host ""
-
-if (-not (Test-Path $ExtensionPackageDir)) {
-    throw "Dossier staging introuvable."
-}
-
-
-Write-Host "=== Contenu du staging extension ==="
-Get-ChildItem $ExtensionPackageDir -Force | Format-Table Name, Length, Mode
-Write-Host "=== Contenu du staging extension ==="
-Get-ChildItem $ExtensionPackageDir -Recurse | ForEach-Object {
-    Write-Host $_.FullName
-}
-
-Write-Host "=== extension.yaml ==="
-Get-Content (Join-Path $ExtensionPackageDir "extension.yaml")
-
-Write-Host "=== Toolbox ==="
-& $Toolbox --help
 
 
 # ----------------------------------------------------------------------
