@@ -20,9 +20,11 @@
                                 x:Name="GameUpdateStatus_UpdateStatus"
                                 DockPanel.Dock="Left"
                                 VerticalAlignment="Center"
+								HorizontalContentAlignment="Stretch"
+								VerticalContentAlignment="Stretch"
                                 Margin="0,0,6,0"
-                                Width="12"
-                                Height="12" />
+                                Width="8"
+                                Height="8" />
                                 
                             <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
                                        VerticalAlignment="Center" DockPanel.Dock="Left">

@@ -1,16 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Controls;
-
 using Playnite.SDK;
-using Playnite.SDK.Data;
-using Playnite.SDK.Events;
 using Playnite.SDK.Models;
 using Playnite.SDK.Plugins;
-
 using GameUpdateStatus.Controls;
+using Playnite.SDK.Events;
+using Playnite.SDK.Data;
 
 namespace GameUpdateStatus
 {
@@ -21,10 +19,16 @@ namespace GameUpdateStatus
         public static GameUpdateStatusPlugin Instance { get; private set; }
 
         private readonly ILogger logger;
+        private readonly SteamUpdateChecker steamChecker;
 
         private readonly Dictionary<string, UpdateStatus> statuses =
             new Dictionary<string, UpdateStatus>(
                 StringComparer.OrdinalIgnoreCase);
+
+        public event EventHandler StatusesUpdated;
+        private readonly string statusFile;
+
+        private const int CacheDurationMinutes = 30;
 
         public override Guid Id =>
             Guid.Parse("6D8E4F57-3B19-4A61-A2F4-8D0C5B9A7E21");
@@ -35,17 +39,21 @@ namespace GameUpdateStatus
             Instance = this;
 
             logger = LogManager.GetLogger();
-            logger.Info("GameUpdateStatus TEST: plugin chargé !");
 
-            AddCustomElementSupport(
-                new AddCustomElementSupportArgs
+            steamChecker = new SteamUpdateChecker(logger);
+
+            statusFile = Path.Combine(
+                GetPluginUserDataPath(),
+                "update-status.json");
+
+            AddCustomElementSupport(new AddCustomElementSupportArgs
+            {
+                ElementList = new List<string>
                 {
-                    SourceName = ExtensionName,
-                    ElementList = new List<string>
-                    {
-                        "UpdateStatus"
-                    }
-                });
+                    "UpdateStatus"
+                },
+                SourceName = ExtensionName
+            });
 
             LoadStatusFile();
         }
@@ -54,6 +62,8 @@ namespace GameUpdateStatus
             OnApplicationStartedEventArgs args)
         {
             LoadStatusFile();
+
+            _ = CheckForUpdatesAsync();
         }
 
         public override void OnApplicationStopped(
@@ -65,11 +75,11 @@ namespace GameUpdateStatus
         public override Control GetGameViewControl(
             GetGameViewControlArgs args)
         {
-            logger.Info("GetGameViewControl : " + args.Name);
-
             if (args.Name == "UpdateStatus")
             {
-                logger.Info("Création de UpdateStatusControl");
+                logger.Info(
+                    "GetGameViewControl : UpdateStatus");
+
                 return new UpdateStatusControl();
             }
 
@@ -79,38 +89,138 @@ namespace GameUpdateStatus
         public UpdateStatusComponent GetStatus(Game game)
         {
             if (game == null)
-            {
-                return new UpdateStatusComponent(UpdateStatus.Unknown, "Jeu inconnu");
-            }
+                return new UpdateStatusComponent(UpdateStatus.NotInstalled, "Jeu inconnu");
 
-            // Pour l'instant, uniquement Steam.
             if (game.Source == null ||
                 !game.Source.Name.Equals(
                     "Steam",
                     StringComparison.OrdinalIgnoreCase))
             {
-                return new UpdateStatusComponent(UpdateStatus.Unknown, "Source non prise en charge");
+                return new UpdateStatusComponent(UpdateStatus.NotInstalled, "Source non supportée");
             }
 
             if (string.IsNullOrWhiteSpace(game.GameId))
+                return new UpdateStatusComponent(UpdateStatus.NotInstalled, "ID de jeu invalide");
+
+            UpdateStatus status;
+
+            if (statuses.TryGetValue(
+                game.GameId,
+                out status))
             {
-                return new UpdateStatusComponent(UpdateStatus.Unknown, "ID de jeu null");
+                return new UpdateStatusComponent(status);
             }
 
-            if (statuses == null || statuses.Count == 0)
-            {
-                return new UpdateStatusComponent(UpdateStatus.Unknown, "Fichier de statut de mise à jour non chargé");
-            }   
+            return new UpdateStatusComponent(UpdateStatus.Unknown);
+        }
 
-            if (!statuses.TryGetValue(
-                    game.GameId,
-                    out var status))
+        private async Task CheckForUpdatesAsync()
+        {
+            try
             {
-                // Pas présent dans le fichier = pas installé.
-                return new UpdateStatusComponent(UpdateStatus.Unknown, "ID de jeu invalide");
+                if (IsCacheValid())
+                {
+                    logger.Info(
+                        "Update cache still valid. No Steam check needed.");
+
+                    return;
+                }
+
+                logger.Info(
+                    "Update cache expired. Starting Steam update check.");
+
+                List<StatusEntry> results =
+                    await Task.Run(() => steamChecker.Check());
+
+                if (results == null ||
+                    results.Count == 0)
+                {
+                    logger.Warn(
+                        "Steam update check returned no results.");
+
+                    return;
+                }
+
+                SaveResults(results);
+
+                logger.Info(
+                    "Steam update check completed: " +
+                    results.Count +
+                    " games.");
+
+                // Recharge le dictionnaire utilisé par les contrôles.
+                LoadStatusFile();
+                
+                StatusesUpdated?.Invoke(this, EventArgs.Empty);
             }
+            catch (Exception ex)
+            {
+                logger.Error(
+                    ex,
+                    "Steam update check failed.");
+            }
+        }
 
-            return new UpdateStatusComponent(status);
+        private bool IsCacheValid()
+        {
+            try
+            {
+                if (!File.Exists(statusFile))
+                    return false;
+
+                DateTime lastWrite =
+                    File.GetLastWriteTime(statusFile);
+
+                double ageMinutes =
+                    (DateTime.Now - lastWrite).TotalMinutes;
+
+                logger.Info(
+                    "Update cache age: " +
+                    Math.Round(ageMinutes, 1) +
+                    " minutes.");
+
+                return ageMinutes < CacheDurationMinutes;
+            }
+            catch (Exception ex)
+            {
+                logger.Error(
+                    ex,
+                    "Failed to check update cache.");
+
+                return false;
+            }
+        }
+
+        private void SaveResults(
+            List<StatusEntry> results)
+        {
+            try
+            {
+                string directory =
+                    Path.GetDirectoryName(statusFile);
+
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                string json =
+                    Serialization.ToJson(results);
+
+                File.WriteAllText(
+                    statusFile,
+                    json);
+
+                logger.Info(
+                    "Update status cache saved: " +
+                    statusFile);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(
+                    ex,
+                    "Failed to save update status cache.");
+            }
         }
 
         private void LoadStatusFile()
@@ -119,33 +229,29 @@ namespace GameUpdateStatus
 
             try
             {
-                string file = Path.Combine(
-                    GetPluginUserDataPath(),
-                    "update-status.json");
-
-                if (!File.Exists(file))
+                if (!File.Exists(statusFile))
                 {
                     logger.Info(
-                        $"Update status file not found: {file}");
+                        "Update status file not found: " +
+                        statusFile);
 
                     return;
                 }
 
                 string json =
-                    File.ReadAllText(file);
+                    File.ReadAllText(statusFile);
 
                 var entries =
                     Serialization.FromJson<List<StatusEntry>>(
                         json);
 
                 if (entries == null)
-                {
                     return;
-                }
 
-                foreach (var entry in entries)
+                foreach (StatusEntry entry in entries)
                 {
-                    if (string.IsNullOrWhiteSpace(entry.AppId))
+                    if (entry == null ||
+                        string.IsNullOrWhiteSpace(entry.AppId))
                     {
                         continue;
                     }
@@ -155,7 +261,9 @@ namespace GameUpdateStatus
                 }
 
                 logger.Info(
-                    $"Loaded {statuses.Count} update statuses.");
+                    "Loaded " +
+                    statuses.Count +
+                    " update statuses.");
             }
             catch (Exception ex)
             {
@@ -165,7 +273,8 @@ namespace GameUpdateStatus
             }
         }
 
-        private UpdateStatus ParseStatus(string status)
+        private static UpdateStatus ParseStatus(
+            string status)
         {
             switch (status)
             {
@@ -181,21 +290,6 @@ namespace GameUpdateStatus
                 default:
                     return UpdateStatus.Unknown;
             }
-        }
-
-        private class StatusEntry
-        {
-            public string AppId { get; set; }
-
-            public string Name { get; set; }
-
-            public string LocalBuild { get; set; }
-
-            public string PublicBuild { get; set; }
-
-            public string Status { get; set; }
-
-            public string CheckedAt { get; set; }
         }
     }
 }

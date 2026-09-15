@@ -19,6 +19,41 @@ namespace GameUpdateStatus.Controls
             StatusText = "État inconnu";
 
             DataContext = this;
+
+            if (GameUpdateStatusPlugin.Instance != null)
+            {
+                GameUpdateStatusPlugin.Instance.StatusesUpdated +=
+                    OnStatusesUpdated;
+            }
+        }
+
+        private void OnStatusesUpdated(
+            object sender,
+            EventArgs e)
+        {
+            RefreshStatus(GameContext);
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            if (GameUpdateStatusPlugin.Instance != null)
+            {
+                GameUpdateStatusPlugin.Instance.StatusesUpdated -=
+                    OnStatusesUpdated;
+
+                GameUpdateStatusPlugin.Instance.StatusesUpdated +=
+                    OnStatusesUpdated;
+            }
+
+            RefreshStatus(GameContext);
+        }
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            if (GameUpdateStatusPlugin.Instance != null)
+            {
+                GameUpdateStatusPlugin.Instance.StatusesUpdated -=
+                    OnStatusesUpdated;
+            }
         }
 
         public override void GameContextChanged(Game oldContext, Game newContext)
