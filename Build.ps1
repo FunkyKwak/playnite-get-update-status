@@ -17,12 +17,9 @@ if (-not (Test-Path $Toolbox)) {
 
 $BinDir = Join-Path $ProjectDir "bin"
 $ReleaseDir = Join-Path $BinDir "Release"
-$PackageDir = Join-Path $BinDir "Package"
+$ReleaseDirNet = Join-Path $ReleaseDir "net462"
 
-$ExtensionPackageDir = Join-Path $PackageDir "Extension"
-$ThemePackageDir = Join-Path $PackageDir "Theme"
-
-$ThemeSourceDir = Join-Path $ProjectDir "Playnite\Themes\Desktop\Game Update Status"
+$ThemeDir = Join-Path $ProjectDir "Playnite\Themes\Desktop\Game Update Status"
 
 
 # ----------------------------------------------------------------------
@@ -41,8 +38,8 @@ if (-not (Test-Path (Join-Path $ProjectDir "extension.toml"))) {
     throw "extension.toml introuvable."
 }
 
-if (-not (Test-Path $ThemeSourceDir)) {
-    throw "Dossier du thème introuvable : $ThemeSourceDir"
+if (-not (Test-Path $ThemeDir)) {
+    throw "Dossier du thème introuvable : $ThemeDir"
 }
 
 
@@ -53,21 +50,8 @@ if (-not (Test-Path $ThemeSourceDir)) {
 Write-Host ""
 Write-Host "=== Nettoyage ==="
 
-Remove-Item $PackageDir -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item $ReleaseDir -Recurse -Force -ErrorAction SilentlyContinue
 
-New-Item -ItemType Directory -Path $PackageDir -Force | Out-Null
-New-Item -ItemType Directory -Path $ExtensionPackageDir -Force | Out-Null
-New-Item -ItemType Directory -Path $ThemePackageDir -Force | Out-Null
-
-# On conserve bin\Release pour la sortie finale.
-New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
-
-# Supprime uniquement les anciens packages.
-Get-ChildItem $ReleaseDir -File |
-    Where-Object {
-        $_.Extension -in ".pext", ".pthm"
-    } |
-    Remove-Item -Force
 
 
 # ----------------------------------------------------------------------
@@ -89,10 +73,6 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 
-# ----------------------------------------------------------------------
-# Préparation du package extension
-# ----------------------------------------------------------------------
-$ExtensionPackageDir = Join-Path $ReleaseDir "net462"
 
 
 
@@ -104,28 +84,14 @@ Write-Host ""
 Write-Host "=== Packaging .pext ==="
 
 & $Toolbox pack `
-    $ExtensionPackageDir `
-    $ReleaseDir
+    $ReleaseDirNet `
+    (Join-Path $ReleaseDir "GameUpdateStatus.pext")
 
 if ($LASTEXITCODE -ne 0) {
     throw "Le packaging de l'extension a échoué."
 }
 
 
-# ----------------------------------------------------------------------
-# Préparation du package thème
-# ----------------------------------------------------------------------
-
-Write-Host ""
-Write-Host "=== Préparation du thème Desktop ==="
-
-$ThemeStagingDir = Join-Path $ThemePackageDir "Game Update Status"
-
-Copy-Item `
-    $ThemeSourceDir `
-    $ThemeStagingDir `
-    -Recurse `
-    -Force
 
 
 # ----------------------------------------------------------------------
@@ -135,8 +101,10 @@ Copy-Item `
 Write-Host ""
 Write-Host "=== Packaging .pthm ==="
 
+Write-Host "Packaging du thème : $ThemeDir"
+
 & $Toolbox pack `
-    $ThemeStagingDir `
+    $ThemeDir `
     $ReleaseDir
 
 if ($LASTEXITCODE -ne 0) {

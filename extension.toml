@@ -3,4 +3,4 @@ Name: Game Update Status
 Author: Yann
 Version: 1.0.0
 Module: GameUpdateStatus.dll
-Type: GenericPlugin
+Type: Plugin
