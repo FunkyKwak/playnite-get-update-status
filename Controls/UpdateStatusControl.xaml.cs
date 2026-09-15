@@ -20,17 +20,17 @@ namespace GameUpdateStatus.Controls
 
             DataContext = this;
 
-            UpdateStatus();
+            RefreshStatus();
         }
 
-        protected override void GameContextChanged(
+        public override void GameContextChanged(
             Game oldContext,
             Game newContext)
         {
-            UpdateStatus();
+            RefreshStatus();
         }
 
-        private void UpdateStatus()
+        private void RefreshStatus()
         {
             var game = GameContext;
 

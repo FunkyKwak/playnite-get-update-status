@@ -2,7 +2,7 @@ using Playnite.SDK;
 
 namespace GameUpdateStatus
 {
-    public class GameUpdateStatusSettings : ObservableObject
+    public class GameUpdateStatusSettings : System.Collections.Generic.ObservableObject
     {
         private int cacheDurationMinutes = 30;
 

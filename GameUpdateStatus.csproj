@@ -4,6 +4,7 @@
     <TargetFramework>net462</TargetFramework>
 
     <OutputType>Library</OutputType>
+    <UseWPF>true</UseWPF>
 
     <RootNamespace>GameUpdateStatus</RootNamespace>
     <AssemblyName>GameUpdateStatus</AssemblyName>
@@ -17,10 +18,8 @@
 
   <ItemGroup>
 
-    <Reference Include="PlayniteSDK">
-      <HintPath>
-        C:\Users\%USERNAME%\AppData\Local\Playnite\Playnite.SDK.dll
-      </HintPath>
+    <Reference Include="Playnite.SDK">
+      <HintPath>C:\Users\Yann\AppData\Local\Playnite\Playnite.SDK.dll</HintPath>
     </Reference>
 
     <Reference Include="PresentationCore" />
@@ -30,7 +29,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Include="Controls\UpdateStatusControl.xaml" />
+    <Page Remove="Playnite\**\*.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>
