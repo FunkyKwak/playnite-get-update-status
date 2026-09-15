@@ -2,7 +2,23 @@
 # Steam Update Status - V4
 # ============================================
 
-$CacheFile = Join-Path $PSScriptRoot "update-status.json"
+$PluginId = "6D8E4F57-3B19-4A61-A2F4-8D0C5B9A7E21"
+
+$StatusDirectory = Join-Path `
+    $env:APPDATA `
+    "Playnite\ExtensionsData\$PluginId"
+
+New-Item `
+    -ItemType Directory `
+    -Path $StatusDirectory `
+    -Force |
+    Out-Null
+
+$CacheFile = Join-Path `
+    $StatusDirectory `
+    "update-status.json"
+
+    
 $CacheDurationMinutes = 30
 
 # ============================================
@@ -13,7 +29,7 @@ if (Test-Path $CacheFile) {
 
     $Cache = Get-Item $CacheFile
 
-    $AgeMinutes = ((Get-Date) - $Cache.LastWriteTime).TotalMinutes
+    $AgeMinu&tes = ((Get-Date) - $Cache.LastWriteTime).TotalMinutes
 
     if ($AgeMinutes -lt $CacheDurationMinutes) {
 

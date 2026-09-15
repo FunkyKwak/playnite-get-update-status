@@ -6,6 +6,7 @@ using System.Windows.Controls;
 
 using Playnite.SDK;
 using Playnite.SDK.Models;
+using Playnite.SDK.Plugins;
 
 using GameUpdateStatus.Controls;
 
@@ -13,26 +14,35 @@ namespace GameUpdateStatus
 {
     public class GameUpdateStatusPlugin : GenericPlugin
     {
+        public const string ExtensionName = "GameUpdateStatus";
+
         public static GameUpdateStatusPlugin Instance { get; private set; }
 
         private readonly ILogger logger;
 
         private readonly Dictionary<string, UpdateStatus> statuses =
-            new Dictionary<string, UpdateStatus>();
-
-        private GameUpdateStatusSettings settings;
+            new Dictionary<string, UpdateStatus>(
+                StringComparer.OrdinalIgnoreCase);
 
         public override Guid Id =>
             Guid.Parse("6D8E4F57-3B19-4A61-A2F4-8D0C5B9A7E21");
 
-        public GameUpdateStatusPlugin(IPlayniteAPI api) : base(api)
+        public GameUpdateStatusPlugin(IPlayniteAPI api)
+            : base(api)
         {
             Instance = this;
 
             logger = LogManager.GetLogger();
 
-            settings = LoadPluginSettings<GameUpdateStatusSettings>()
-                       ?? new GameUpdateStatusSettings();
+            AddCustomElementSupport(
+                new AddCustomElementSupportArgs
+                {
+                    SourceName = ExtensionName,
+                    ElementList = new List<string>
+                    {
+                        "UpdateStatus"
+                    }
+                });
 
             LoadStatusFile();
         }
@@ -49,41 +59,47 @@ namespace GameUpdateStatus
             Instance = null;
         }
 
+        public override Control GetGameViewControl(
+            GetGameViewControlArgs args)
+        {
+            if (args.Name == "UpdateStatus")
+            {
+                return new UpdateStatusControl();
+            }
+
+            return null;
+        }
+
         public UpdateStatus GetStatus(Game game)
         {
             if (game == null)
-                return UpdateStatus.Unknown;
+            {
+                return UpdateStatus.NotInstalled;
+            }
 
-            /*
-             * Pour Steam :
-             *
-             * game.Source = Steam
-             * game.GameId = Steam AppID
-             */
-
+            // Pour l'instant, uniquement Steam.
             if (game.Source == null ||
                 !game.Source.Name.Equals(
                     "Steam",
                     StringComparison.OrdinalIgnoreCase))
             {
-                return UpdateStatus.Unknown;
+                return UpdateStatus.NotInstalled;
             }
 
-            if (string.IsNullOrEmpty(game.GameId))
-                return UpdateStatus.Unknown;
+            if (string.IsNullOrWhiteSpace(game.GameId))
+            {
+                return UpdateStatus.NotInstalled;
+            }
 
-            if (statuses.TryGetValue(game.GameId, out var status))
-                return status;
+            if (!statuses.TryGetValue(
+                    game.GameId,
+                    out var status))
+            {
+                // Pas présent dans le fichier = pas installé.
+                return UpdateStatus.NotInstalled;
+            }
 
-            /*
-             * Aucun résultat signifie notamment :
-             * - jeu non installé
-             * - jeu non vérifié
-             *
-             * On ne veut PAS afficher de boule dans ce cas.
-             */
-
-            return UpdateStatus.Unknown;
+            return status;
         }
 
         private void LoadStatusFile()
@@ -92,12 +108,8 @@ namespace GameUpdateStatus
 
             try
             {
-                var file = Path.Combine(
-                    Environment.GetFolderPath(
-                        Environment.SpecialFolder.ApplicationData),
-                    "Playnite",
-                    "Extensions",
-                    "GameUpdateStatus",
+                string file = Path.Combine(
+                    GetPluginUserDataPath(),
                     "update-status.json");
 
                 if (!File.Exists(file))
@@ -108,22 +120,27 @@ namespace GameUpdateStatus
                     return;
                 }
 
-                var json = File.ReadAllText(file);
+                string json =
+                    File.ReadAllText(file);
 
                 var entries =
-                    Newtonsoft.Json.JsonConvert
-                        .DeserializeObject<List<StatusEntry>>(json);
+                    Serialization.FromJson<List<StatusEntry>>(
+                        json);
 
                 if (entries == null)
+                {
                     return;
+                }
 
                 foreach (var entry in entries)
                 {
-                    if (!string.IsNullOrEmpty(entry.AppId))
+                    if (string.IsNullOrWhiteSpace(entry.AppId))
                     {
-                        statuses[entry.AppId] =
-                            ParseStatus(entry.Status);
+                        continue;
                     }
+
+                    statuses[entry.AppId] =
+                        ParseStatus(entry.Status);
                 }
 
                 logger.Info(
@@ -147,28 +164,12 @@ namespace GameUpdateStatus
                 case "UPDATE_AVAILABLE":
                     return UpdateStatus.UpdateAvailable;
 
+                case "UNKNOWN":
+                    return UpdateStatus.Unknown;
+
                 default:
                     return UpdateStatus.Unknown;
             }
-        }
-
-        public override Control GetGameViewControl(
-            GetGameViewControlArgs args)
-        {
-            if (args.Name == "UpdateStatus")
-            {
-                return new UpdateStatusControl();
-            }
-
-            return null;
-        }
-
-        public override void AddCustomElementSupport(
-            AddCustomElementSupportArgs args)
-        {
-            args.AddElement(
-                "UpdateStatus",
-                "UpdateStatus");
         }
 
         private class StatusEntry

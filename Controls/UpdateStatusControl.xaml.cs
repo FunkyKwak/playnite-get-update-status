@@ -1,24 +1,15 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+
+using Playnite.SDK;
 using Playnite.SDK.Models;
+using Playnite.SDK.Controls;
 
 namespace GameUpdateStatus.Controls
 {
-    public partial class UpdateStatusControl : UserControl
+    public partial class UpdateStatusControl : PluginUserControl
     {
-        private Game game;
-
-        public Game GameContext
-        {
-            get => game;
-            set
-            {
-                game = value;
-                UpdateVisual();
-            }
-        }
-
         public Brush StatusBrush { get; private set; }
 
         public string StatusText { get; private set; }
@@ -26,26 +17,32 @@ namespace GameUpdateStatus.Controls
         public UpdateStatusControl()
         {
             InitializeComponent();
+
             DataContext = this;
+
+            UpdateStatus();
         }
 
-        private void UpdateVisual()
+        protected override void GameContextChanged(
+            Game oldContext,
+            Game newContext)
         {
-            if (game == null)
+            UpdateStatus();
+        }
+
+        private void UpdateStatus()
+        {
+            var game = GameContext;
+
+            if (game == null ||
+                GameUpdateStatusPlugin.Instance == null)
             {
                 Visibility = Visibility.Collapsed;
                 return;
             }
 
-            var plugin = GameUpdateStatusPlugin.Instance;
-
-            if (plugin == null)
-            {
-                Visibility = Visibility.Collapsed;
-                return;
-            }
-
-            var status = plugin.GetStatus(game);
+            var status =
+                GameUpdateStatusPlugin.Instance.GetStatus(game);
 
             switch (status)
             {
@@ -76,10 +73,11 @@ namespace GameUpdateStatus.Controls
                 default:
 
                     Visibility = Visibility.Collapsed;
+
                     break;
             }
 
-            // Force WPF à actualiser les bindings.
+            // Force la mise à jour du binding.
             DataContext = null;
             DataContext = this;
         }

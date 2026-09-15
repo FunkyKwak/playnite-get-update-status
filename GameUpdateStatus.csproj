@@ -10,17 +10,22 @@
 
     <LangVersion>latest</LangVersion>
 
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
 
+    <Reference Include="PlayniteSDK">
+      <HintPath>
+        C:\Users\%USERNAME%\AppData\Local\Playnite\Playnite.SDK.dll
+      </HintPath>
+    </Reference>
+
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
-
-    <PackageReference Include="PlayniteSDK"
-                      Version="6.0.0" />
 
   </ItemGroup>
 
