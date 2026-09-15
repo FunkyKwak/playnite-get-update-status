@@ -13,12 +13,13 @@
 
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
 
     <Reference Include="Playnite.SDK">
+      <Private>False</Private>
       <HintPath>C:\Users\Yann\AppData\Local\Playnite\Playnite.SDK.dll</HintPath>
     </Reference>
 
