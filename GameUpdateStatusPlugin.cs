@@ -35,6 +35,7 @@ namespace GameUpdateStatus
             Instance = this;
 
             logger = LogManager.GetLogger();
+            logger.Info("GameUpdateStatus TEST: plugin chargé !");
 
             AddCustomElementSupport(
                 new AddCustomElementSupportArgs
@@ -64,19 +65,22 @@ namespace GameUpdateStatus
         public override Control GetGameViewControl(
             GetGameViewControlArgs args)
         {
+            logger.Info("GetGameViewControl : " + args.Name);
+
             if (args.Name == "UpdateStatus")
             {
+                logger.Info("Création de UpdateStatusControl");
                 return new UpdateStatusControl();
             }
 
             return null;
         }
 
-        public UpdateStatus GetStatus(Game game)
+        public UpdateStatusComponent GetStatus(Game game)
         {
             if (game == null)
             {
-                return UpdateStatus.NotInstalled;
+                return new UpdateStatusComponent(UpdateStatus.Unknown, "Jeu inconnu");
             }
 
             // Pour l'instant, uniquement Steam.
@@ -85,23 +89,28 @@ namespace GameUpdateStatus
                     "Steam",
                     StringComparison.OrdinalIgnoreCase))
             {
-                return UpdateStatus.NotInstalled;
+                return new UpdateStatusComponent(UpdateStatus.Unknown, "Source non prise en charge");
             }
 
             if (string.IsNullOrWhiteSpace(game.GameId))
             {
-                return UpdateStatus.NotInstalled;
+                return new UpdateStatusComponent(UpdateStatus.Unknown, "ID de jeu null");
             }
+
+            if (statuses == null || statuses.Count == 0)
+            {
+                return new UpdateStatusComponent(UpdateStatus.Unknown, "Fichier de statut de mise à jour non chargé");
+            }   
 
             if (!statuses.TryGetValue(
                     game.GameId,
                     out var status))
             {
                 // Pas présent dans le fichier = pas installé.
-                return UpdateStatus.NotInstalled;
+                return new UpdateStatusComponent(UpdateStatus.Unknown, "ID de jeu invalide");
             }
 
-            return status;
+            return new UpdateStatusComponent(status);
         }
 
         private void LoadStatusFile()

@@ -1,83 +1,78 @@
+using System;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
-
-using Playnite.SDK;
-using Playnite.SDK.Models;
 using Playnite.SDK.Controls;
+using Playnite.SDK.Models;
 
 namespace GameUpdateStatus.Controls
 {
     public partial class UpdateStatusControl : PluginUserControl
     {
         public Brush StatusBrush { get; private set; }
-
         public string StatusText { get; private set; }
 
         public UpdateStatusControl()
         {
             InitializeComponent();
 
+            StatusBrush = Brushes.Gray;
+            StatusText = "État inconnu";
+
             DataContext = this;
-
-            RefreshStatus();
         }
 
-        public override void GameContextChanged(
-            Game oldContext,
-            Game newContext)
+        public override void GameContextChanged(Game oldContext, Game newContext)
         {
-            RefreshStatus();
+            RefreshStatus(newContext);
         }
 
-        private void RefreshStatus()
+        private void RefreshStatus(Game game)
         {
-            var game = GameContext;
-
-            if (game == null ||
-                GameUpdateStatusPlugin.Instance == null)
+            StatusBrush = Brushes.Gray;
+            StatusText = "État inconnu";
+            Visibility = Visibility.Visible;
+            RefreshBinding();
+            
+            if (GameUpdateStatusPlugin.Instance == null)
             {
-                Visibility = Visibility.Collapsed;
+                StatusBrush = Brushes.Gray;
+                StatusText = "Extension GameUpdateStatus non chargée";
+                Visibility = Visibility.Visible;
+                RefreshBinding();
                 return;
             }
 
-            var status =
-                GameUpdateStatusPlugin.Instance.GetStatus(game);
-
-            switch (status)
+            if (game == null)
             {
-                case UpdateStatus.UpToDate:
-
-                    StatusBrush = Brushes.LimeGreen;
-                    StatusText = "À jour";
-                    Visibility = Visibility.Visible;
-
-                    break;
-
-                case UpdateStatus.UpdateAvailable:
-
-                    StatusBrush = Brushes.Orange;
-                    StatusText = "Mise à jour disponible";
-                    Visibility = Visibility.Visible;
-
-                    break;
-
-                case UpdateStatus.Unknown:
-
-                    StatusBrush = Brushes.Gray;
-                    StatusText = "État inconnu";
-                    Visibility = Visibility.Visible;
-
-                    break;
-
-                default:
-
-                    Visibility = Visibility.Collapsed;
-
-                    break;
+                StatusBrush = Brushes.Gray;
+                StatusText = "Jeu inconnu";
+                Visibility = Visibility.Visible;
+                RefreshBinding();
+                return;
             }
 
-            // Force la mise à jour du binding.
+            UpdateStatusComponent status = new UpdateStatusComponent(UpdateStatus.Unknown);
+            try    
+            {
+                status = GameUpdateStatusPlugin.Instance?.GetStatus(game) ?? new UpdateStatusComponent(UpdateStatus.Unknown);
+            }
+            catch (Exception ex)
+            {
+                StatusBrush = Brushes.Red;
+                StatusText = "Erreur lors de la récupération du statut de mise à jour";
+                Visibility = Visibility.Visible;
+                RefreshBinding();
+                return;
+            }
+
+            StatusBrush = status.StatusBrush;
+            StatusText = status.StatusText;
+            Visibility = status.Visibility;
+            RefreshBinding();
+        }
+
+        private void RefreshBinding()
+        {
             DataContext = null;
             DataContext = this;
         }
