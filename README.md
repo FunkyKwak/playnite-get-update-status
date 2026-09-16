@@ -14,7 +14,9 @@ Game Update Status displays a small status indicator next to games in Playnite:
 
 Games that are not installed do not display an indicator.
 
-The extension currently supports **Steam games**.
+The extension currently supports games on the following sources :
+- Steam
+- Epic
 
 ## How it works
 
@@ -89,8 +91,7 @@ The default cache duration is:
 
 ## Limitations
 
-* Only **Steam** games are currently supported.
-* Update information depends on the public Steam build information being available.
+* Only **Steam** and **Epic** games are currently supported.
 * The extension does not start Steam downloads or install updates.
 * It only reports whether a newer build appears to be available.
 * The indicator is currently available in the **Playnite Desktop theme** only.
