@@ -3,3 +3,6 @@ Name: Game Update Status
 Author: FunkyKwak
 Version: $Version
 ThemeApiVersion: 2.0.0
+Links:
+    - Name: GitHub
+      Url: https://github.com/FunkyKwak/playnite-get-update-status

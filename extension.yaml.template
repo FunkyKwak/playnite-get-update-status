@@ -4,3 +4,6 @@ Author: FunkyKwak
 Version: $Version
 Module: GameUpdateStatus.dll
 Type: GenericPlugin
+Links:
+    - Name: GitHub
+      Url: https://github.com/FunkyKwak/playnite-get-update-status
