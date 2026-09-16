@@ -91,7 +91,7 @@ namespace GameUpdateStatus.Controls
             {
                 status = GameUpdateStatusPlugin.Instance?.GetStatus(game) ?? new UpdateStatusComponent(UpdateStatus.Unknown);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 StatusBrush = Brushes.Red;
                 StatusText = "Erreur lors de la récupération du statut de mise à jour";
