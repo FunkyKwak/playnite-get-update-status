@@ -8,20 +8,15 @@ using Playnite.SDK;
 
 namespace GameUpdateStatus
 {
-    public class SteamUpdateChecker
+    public class SteamUpdateChecker : Checker
     {
-        private readonly ILogger logger;
+        public SteamUpdateChecker(ILogger logger) : base(logger) { }
 
-        public SteamUpdateChecker(ILogger logger)
-        {
-            this.logger = logger;
-        }
-
-        public List<StatusEntry> Check()
+        public override List<StatusEntry> Check()
         {
             var results = new List<StatusEntry>();
 
-            string steamPath = FindSteam();
+            string steamPath = FindLauncherPath();
 
             if (string.IsNullOrWhiteSpace(steamPath))
             {
@@ -57,14 +52,14 @@ namespace GameUpdateStatus
 
             foreach (string manifest in manifests)
             {
-                StatusEntry result = CheckManifest(manifest);
+                StatusEntry result = CheckSingle(manifest);
                 results.Add(result);
             }
 
             return results;
         }
 
-        private string FindSteam()
+        protected override string FindLauncherPath()
         {
             string steamPath = @"C:\Program Files (x86)\Steam";
 
@@ -141,7 +136,7 @@ namespace GameUpdateStatus
             return libraries;
         }
 
-        private StatusEntry CheckManifest(string manifest)
+        protected override StatusEntry GetLocalInfo(string manifest)
         {
             string fileName = Path.GetFileNameWithoutExtension(manifest);
 
@@ -155,7 +150,7 @@ namespace GameUpdateStatus
 
             string localBuild = GetValue(content, "buildid");
 
-            var result = new StatusEntry
+            return new StatusEntry
             {
                 Source = "Steam",
                 AppId = appId,
@@ -165,44 +160,10 @@ namespace GameUpdateStatus
                 Status = UpdateStatus.Unknown.ToString(),
                 CheckedAt = DateTime.Now.ToString("o")
             };
-
-            if (string.IsNullOrWhiteSpace(localBuild))
-                return result;
-
-            logger.Info(
-                "[" + appId + "] " + name +
-                " - Local : " + localBuild);
-
-            string publicBuild = GetSteamPublicBuildId(appId);
-
-            result.PublicBuild = publicBuild;
-
-            if (string.IsNullOrWhiteSpace(publicBuild))
-            {
-                result.Status = UpdateStatus.Unknown.ToString();
-
-                logger.Info("  Public : ?");
-                logger.Info("  Etat   : Inconnu");
-            }
-            else if (localBuild == publicBuild)
-            {
-                result.Status = UpdateStatus.UpToDate.ToString();
-
-                logger.Info("  Public : " + publicBuild);
-                logger.Info("  Etat   : À jour");
-            }
-            else
-            {
-                result.Status = UpdateStatus.UpdateAvailable.ToString();
-
-                logger.Info("  Public : " + publicBuild);
-                logger.Info("  Etat   : Mise à jour disponible");
-            }
-
-            return result;
         }
 
-        private string GetSteamPublicBuildId(string appId)
+
+        protected override string GetPublicBuildId(string appId)
         {
             try
             {
