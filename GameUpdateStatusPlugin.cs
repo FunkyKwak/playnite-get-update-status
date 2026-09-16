@@ -20,6 +20,7 @@ namespace GameUpdateStatus
 
         private readonly ILogger logger;
         private readonly SteamUpdateChecker steamChecker;
+        private readonly EpicUpdateChecker epicChecker;
 
         private readonly Dictionary<string, UpdateStatus> statuses =
             new Dictionary<string, UpdateStatus>(
@@ -41,6 +42,7 @@ namespace GameUpdateStatus
             logger = LogManager.GetLogger();
 
             steamChecker = new SteamUpdateChecker(logger);
+            epicChecker = new EpicUpdateChecker(logger);
 
             statusFile = Path.Combine(
                 GetPluginUserDataPath(),
@@ -77,9 +79,6 @@ namespace GameUpdateStatus
         {
             if (args.Name == "UpdateStatus")
             {
-                logger.Info(
-                    "GetGameViewControl : UpdateStatus");
-
                 return new UpdateStatusControl();
             }
 
@@ -91,27 +90,59 @@ namespace GameUpdateStatus
             if (game == null)
                 return new UpdateStatusComponent(UpdateStatus.NotInstalled, "Jeu inconnu");
 
-            if (game.Source == null ||
-                !game.Source.Name.Equals(
-                    "Steam",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return new UpdateStatusComponent(UpdateStatus.NotInstalled, "Source non supportée");
-            }
+            string sourceName = GetSupportedSource(game.Source?.Name);
+
+            if (string.IsNullOrWhiteSpace(sourceName))
+                return new UpdateStatusComponent(UpdateStatus.NotInstalled, "Source non supportée (" + game.Source?.Name + ")");
+
+            if (sourceName == "Manual")
+                return new UpdateStatusComponent(UpdateStatus.UpToDate, "Jeu ajouté manuellement (toujours à jour)");
 
             if (string.IsNullOrWhiteSpace(game.GameId))
                 return new UpdateStatusComponent(UpdateStatus.NotInstalled, "ID de jeu invalide");
 
+            string cacheKey = BuildStatusKey(sourceName, game.GameId);
+
             UpdateStatus status;
 
             if (statuses.TryGetValue(
-                game.GameId,
+                cacheKey,
                 out status))
             {
                 return new UpdateStatusComponent(status);
             }
 
             return new UpdateStatusComponent(UpdateStatus.Unknown);
+        }
+
+        private static string GetSupportedSource(string sourceName)
+        {
+            if (string.IsNullOrWhiteSpace(sourceName))
+                return null;
+
+            if (sourceName.Equals("Steam", StringComparison.OrdinalIgnoreCase))
+                return "Steam";
+
+            if (sourceName.Equals("Epic", StringComparison.OrdinalIgnoreCase))
+                return "Epic";
+
+            if (sourceName.Equals("Epic Games", StringComparison.OrdinalIgnoreCase))
+                return "Epic";
+
+            if (sourceName.Equals("Epic Games Store", StringComparison.OrdinalIgnoreCase))
+                return "Epic";
+
+            if (sourceName.Equals("Emulation", StringComparison.OrdinalIgnoreCase))
+                return "Manual";
+            if (sourceName.Equals("Téléchargements", StringComparison.OrdinalIgnoreCase))
+                return "Manual";
+
+            return null;
+        }
+
+        private static string BuildStatusKey(string sourceName, string gameId)
+        {
+            return (sourceName ?? "Unknown") + ":" + (gameId ?? string.Empty);
         }
 
         private async Task CheckForUpdatesAsync()
@@ -127,16 +158,22 @@ namespace GameUpdateStatus
                 }
 
                 logger.Info(
-                    "Update cache expired. Starting Steam update check.");
+                    "Update cache expired. Starting update checks.");
 
-                List<StatusEntry> results =
-                    await Task.Run(() => steamChecker.Check());
+                List<StatusEntry> results = new List<StatusEntry>();
+
+                results.AddRange(
+                    await Task.Run(() => steamChecker.Check())
+                );
+                results.AddRange(
+                    await Task.Run(() => epicChecker.Check())
+                );
 
                 if (results == null ||
                     results.Count == 0)
                 {
                     logger.Warn(
-                        "Steam update check returned no results.");
+                        "Update checks returned no results.");
 
                     return;
                 }
@@ -144,7 +181,7 @@ namespace GameUpdateStatus
                 SaveResults(results);
 
                 logger.Info(
-                    "Steam update check completed: " +
+                    "Update checks completed: " +
                     results.Count +
                     " games.");
 
@@ -256,7 +293,7 @@ namespace GameUpdateStatus
                         continue;
                     }
 
-                    statuses[entry.AppId] =
+                    statuses[BuildStatusKey(GetSupportedSource(entry.Source), entry.AppId)] =
                         ParseStatus(entry.Status);
                 }
 
@@ -276,20 +313,7 @@ namespace GameUpdateStatus
         private static UpdateStatus ParseStatus(
             string status)
         {
-            switch (status)
-            {
-                case "UP_TO_DATE":
-                    return UpdateStatus.UpToDate;
-
-                case "UPDATE_AVAILABLE":
-                    return UpdateStatus.UpdateAvailable;
-
-                case "UNKNOWN":
-                    return UpdateStatus.Unknown;
-
-                default:
-                    return UpdateStatus.Unknown;
-            }
+            return (UpdateStatus)Enum.Parse(typeof(UpdateStatus), status);
         }
     }
 }

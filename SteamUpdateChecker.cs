@@ -157,11 +157,12 @@ namespace GameUpdateStatus
 
             var result = new StatusEntry
             {
+                Source = "Steam",
                 AppId = appId,
                 Name = name,
                 LocalBuild = localBuild,
                 PublicBuild = null,
-                Status = "UNKNOWN",
+                Status = UpdateStatus.Unknown.ToString(),
                 CheckedAt = DateTime.Now.ToString("o")
             };
 
@@ -178,21 +179,21 @@ namespace GameUpdateStatus
 
             if (string.IsNullOrWhiteSpace(publicBuild))
             {
-                result.Status = "UNKNOWN";
+                result.Status = UpdateStatus.Unknown.ToString();
 
                 logger.Info("  Public : ?");
                 logger.Info("  Etat   : Inconnu");
             }
             else if (localBuild == publicBuild)
             {
-                result.Status = "UP_TO_DATE";
+                result.Status = UpdateStatus.UpToDate.ToString();
 
                 logger.Info("  Public : " + publicBuild);
                 logger.Info("  Etat   : À jour");
             }
             else
             {
-                result.Status = "UPDATE_AVAILABLE";
+                result.Status = UpdateStatus.UpdateAvailable.ToString();
 
                 logger.Info("  Public : " + publicBuild);
                 logger.Info("  Etat   : Mise à jour disponible");

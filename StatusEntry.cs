@@ -2,6 +2,7 @@ namespace GameUpdateStatus
 {
     public class StatusEntry
     {
+        public string Source { get; set; }
         public string AppId { get; set; }
         public string Name { get; set; }
         public string LocalBuild { get; set; }
