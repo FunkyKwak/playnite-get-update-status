@@ -5,62 +5,72 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Playnite.SDK;
 
 namespace GameUpdateStatus
 {
     public class EpicUpdateChecker : Checker
     {
-        public EpicUpdateChecker(ILogger logger) : base(logger) { }
-
-        public override List<StatusEntry> Check()
+        public EpicUpdateChecker(ILogger logger, IPlayniteAPI api) : base(logger)
         {
-            var results = new List<StatusEntry>();
-
-            string epicPath = FindLauncherPath();
-
-            if (string.IsNullOrWhiteSpace(epicPath))
+            _legendaryManager = new LegendaryManager(api.Dialogs);
+        }
+        private LegendaryManager _legendaryManager;
+        public override async Task<List<StatusEntry>> Check()
+        {
+            bool isAuthenticated = await _legendaryManager.EnsureAuthenticatedAsync();
+            if (isAuthenticated)
             {
-                logger.Info("Epic Games Store introuvable.");
+                var results = new List<StatusEntry>();
+
+                string epicPath = FindLauncherPath();
+
+                if (string.IsNullOrWhiteSpace(epicPath))
+                {
+                    logger.Info("Epic Games Store introuvable.");
+                    return results;
+                }
+
+                logger.Info("Epic : " + epicPath);
+
+                string[] manifestFolders =
+                {
+                    Path.Combine(epicPath, "Manifests"),
+                    Path.Combine(epicPath, "InstalledSaves")
+                };
+
+                string manifestsPath = manifestFolders
+                    .FirstOrDefault(Directory.Exists);
+
+                if (string.IsNullOrWhiteSpace(manifestsPath))
+                {
+                    logger.Info("Aucun dossier de manifest Epic trouvé.");
+                    return results;
+                }
+
+                string[] manifestFiles = Directory.GetFiles(
+                    manifestsPath,
+                    "*.item");
+
+                logger.Info("Jeux Epic installés : " + manifestFiles.Length);
+
+                foreach (string manifest in manifestFiles)
+                {
+                    try
+                    {
+                        results.Add(await CheckSingle(manifest));
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex, "Impossible de lire un manifeste Epic : " + manifest);
+                    }
+                }
+
                 return results;
             }
-
-            logger.Info("Epic : " + epicPath);
-
-            string[] manifestFolders =
-            {
-                Path.Combine(epicPath, "Manifests"),
-                Path.Combine(epicPath, "InstalledSaves")
-            };
-
-            string manifestsPath = manifestFolders
-                .FirstOrDefault(Directory.Exists);
-
-            if (string.IsNullOrWhiteSpace(manifestsPath))
-            {
-                logger.Info("Aucun dossier de manifest Epic trouvé.");
-                return results;
-            }
-
-            string[] manifestFiles = Directory.GetFiles(
-                manifestsPath,
-                "*.item");
-
-            logger.Info("Jeux Epic installés : " + manifestFiles.Length);
-
-            foreach (string manifest in manifestFiles)
-            {
-                try
-                {
-                    results.Add(CheckSingle(manifest));
-                }
-                catch (Exception ex)
-                {
-                    logger.Error(ex, "Impossible de lire un manifeste Epic : " + manifest);
-                }
-            }
-
-            return results;
+            logger.Info("L'utilisateur n'est pas connecté à Epic via Legendary");
+            return null;
         }
 
         protected override string FindLauncherPath()
@@ -100,14 +110,7 @@ namespace GameUpdateStatus
 
             return null;
         }
-        private string GetLegendaryPath()
-        {
-            // Récupère le dossier où se trouve la DLL de ton extension
-            string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            path = Path.Combine(path, "resources", "legendary.exe");
-            logger.Info($"Legendary path : {path}");
-            return path;
-        }
+
 
         protected override StatusEntry GetLocalInfo(string manifest)
         {
@@ -138,61 +141,9 @@ namespace GameUpdateStatus
         /// </summary>
         /// <param name="key">Striniig containing catalogNamespace:appId:storeUrl</param>
         /// <returns></returns>
-        protected override string GetPublicBuildId(string appId)
+        protected override async Task<string> GetPublicBuildId(string appId)
         {
-            ProcessStartInfo psi = new ProcessStartInfo
-            {
-                FileName = GetLegendaryPath(),
-                Arguments = $"info {appId} --json",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using (Process process = new Process { StartInfo = psi })
-            {
-                process.Start();
-
-                // Lecture de la sortie JSON renvoyée par Legendary
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-
-                if (process.ExitCode != 0)
-                {
-                    Console.WriteLine($"Erreur lors de l'exécution de Legendary : {error}");
-                    return null;
-                }
-
-                try
-                {
-                    // Parse la structure JSON
-                    logger.Info($"Legendary output : {output}");
-                    return ExtractPublicBuildId(output);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Erreur de parsing JSON : {ex.Message}");
-                    return null;
-                }
-            }
-        }
-
-        private string ExtractPublicBuildId(string json)
-        {
-            // On cherche :
-            // "version": "dev_n43"
-
-            string pattern = "\"version\": \"(.*?)\"";
-
-            Match match = Regex.Match(
-                json,
-                pattern,
-                RegexOptions.Singleline);
-
-            return match.Success
-                ? match.Groups[1].Value
-                : null;
+            return await LegendaryManager.GetLegendaryBuildIdAsync(appId);
         }
 
         private string GetValue(string content, string key)

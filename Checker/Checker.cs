@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Playnite.SDK;
 
 namespace GameUpdateStatus
@@ -17,18 +18,18 @@ namespace GameUpdateStatus
             this.logger = logger;
         }
 
-        public abstract List<StatusEntry> Check();
+        public abstract Task<List<StatusEntry>> Check();
 
         protected abstract string FindLauncherPath();
 
 
         protected abstract StatusEntry GetLocalInfo(string manifest);
-        protected abstract string GetPublicBuildId(string key);
+        protected abstract Task<string> GetPublicBuildId(string key);
 
-        protected StatusEntry CheckSingle(string manifest)
+        protected async Task<StatusEntry> CheckSingle(string manifest)
         {
             StatusEntry status = GetLocalInfo(manifest);
-            status.PublicBuild = GetPublicBuildId(status.AppId);
+            status.PublicBuild = await GetPublicBuildId(status.AppId);
 
             if (string.IsNullOrWhiteSpace(status.PublicBuild))
             {

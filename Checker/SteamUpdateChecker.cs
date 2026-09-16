@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Playnite.SDK;
 
 namespace GameUpdateStatus
@@ -12,7 +13,7 @@ namespace GameUpdateStatus
     {
         public SteamUpdateChecker(ILogger logger) : base(logger) { }
 
-        public override List<StatusEntry> Check()
+        public override async Task<List<StatusEntry>> Check()
         {
             var results = new List<StatusEntry>();
 
@@ -52,7 +53,7 @@ namespace GameUpdateStatus
 
             foreach (string manifest in manifests)
             {
-                StatusEntry result = CheckSingle(manifest);
+                StatusEntry result = await CheckSingle(manifest);
                 results.Add(result);
             }
 
@@ -163,7 +164,7 @@ namespace GameUpdateStatus
         }
 
 
-        protected override string GetPublicBuildId(string appId)
+        protected override async Task<string> GetPublicBuildId(string appId)
         {
             try
             {

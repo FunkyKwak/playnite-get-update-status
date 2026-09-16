@@ -42,7 +42,7 @@ namespace GameUpdateStatus
             logger = LogManager.GetLogger();
 
             steamChecker = new SteamUpdateChecker(logger);
-            epicChecker = new EpicUpdateChecker(logger);
+            epicChecker = new EpicUpdateChecker(logger, api);
 
             statusFile = Path.Combine(
                 GetPluginUserDataPath(),
