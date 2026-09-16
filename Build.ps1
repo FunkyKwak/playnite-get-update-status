@@ -1,23 +1,15 @@
-param(
-    [string]$Toolbox = $null
-)
-
 $ErrorActionPreference = "Stop"
 
 $ProjectDir = $PSScriptRoot
 
 $ProjectFile = Join-Path $ProjectDir "GameUpdateStatus.csproj"
-
-if (-not $Toolbox) {
-    $Toolbox = Join-Path $env:LOCALAPPDATA "Playnite\Toolbox.exe"
-}
-if (-not (Test-Path $Toolbox)) {
-    throw "Playnite Toolbox introuvable : $Toolbox"
-}
+$Toolbox = Join-Path $env:LOCALAPPDATA "Playnite\Toolbox.exe"
 
 $BinDir = Join-Path $ProjectDir "bin"
 $ReleaseDir = Join-Path $BinDir "Release"
-$ReleaseDirNet = Join-Path $ReleaseDir "net462"
+$PackageDir = Join-Path $BinDir "Package"
+
+$ExtensionPackageDir = Join-Path $PackageDir "Extension"
 
 $ThemeDir = Join-Path $ProjectDir "Playnite\Themes\Desktop\Game Update Status"
 
@@ -34,8 +26,8 @@ if (-not (Test-Path $ProjectFile)) {
     throw "Projet introuvable : $ProjectFile"
 }
 
-if (-not (Test-Path (Join-Path $ProjectDir "extension.toml"))) {
-    throw "extension.toml introuvable."
+if (-not (Test-Path (Join-Path $ProjectDir "extension.yaml"))) {
+    throw "extension.yaml introuvable."
 }
 
 if (-not (Test-Path $ThemeDir)) {
@@ -50,8 +42,20 @@ if (-not (Test-Path $ThemeDir)) {
 Write-Host ""
 Write-Host "=== Nettoyage ==="
 
-Remove-Item $ReleaseDir -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item $PackageDir -Recurse -Force -ErrorAction SilentlyContinue
 
+New-Item -ItemType Directory -Path $PackageDir -Force | Out-Null
+New-Item -ItemType Directory -Path $ExtensionPackageDir -Force | Out-Null
+
+# On conserve bin\Release pour la sortie finale.
+New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
+
+# Supprime uniquement les anciens packages.
+Get-ChildItem $ReleaseDir -File |
+    Where-Object {
+        $_.Extension -in ".pext", ".pthm"
+    } |
+    Remove-Item -Force
 
 
 # ----------------------------------------------------------------------
@@ -73,7 +77,28 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 
+# ----------------------------------------------------------------------
+# Préparation du package extension
+# ----------------------------------------------------------------------
 
+Write-Host ""
+Write-Host "=== Préparation de l'extension ==="
+
+Copy-Item `
+    (Join-Path $ProjectDir "extension.yaml") `
+    $ExtensionPackageDir `
+    -Force
+
+$DllPath = Join-Path $ReleaseDir "net462\GameUpdateStatus.dll"
+
+if (-not (Test-Path $DllPath)) {
+    throw "DLL compilée introuvable : $DllPath"
+}
+
+Copy-Item `
+    $DllPath `
+    $ExtensionPackageDir `
+    -Force
 
 
 # ----------------------------------------------------------------------
@@ -84,13 +109,12 @@ Write-Host ""
 Write-Host "=== Packaging .pext ==="
 
 & $Toolbox pack `
-    $ReleaseDirNet `
-    (Join-Path $ReleaseDir "GameUpdateStatus.pext")
+    $ExtensionPackageDir `
+    $ReleaseDir
 
 if ($LASTEXITCODE -ne 0) {
     throw "Le packaging de l'extension a échoué."
 }
-
 
 
 
@@ -100,8 +124,6 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host ""
 Write-Host "=== Packaging .pthm ==="
-
-Write-Host "Packaging du thème : $ThemeDir"
 
 & $Toolbox pack `
     $ThemeDir `
