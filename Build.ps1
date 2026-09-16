@@ -10,8 +10,9 @@ $ReleaseDir = Join-Path $BinDir "Release"
 $PackageDir = Join-Path $BinDir "Package"
 
 $ExtensionPackageDir = Join-Path $PackageDir "Extension"
+$ThemePackageDir = Join-Path $PackageDir "Theme"
 
-$ThemeDir = Join-Path $ProjectDir "Playnite\Themes\Desktop\Game Update Status"
+$ThemeSourceDir = Join-Path $ProjectDir "Playnite\Themes\Desktop\Game Update Status"
 
 
 # ----------------------------------------------------------------------
@@ -26,14 +27,31 @@ if (-not (Test-Path $ProjectFile)) {
     throw "Projet introuvable : $ProjectFile"
 }
 
-if (-not (Test-Path (Join-Path $ProjectDir "extension.yaml"))) {
+if (-not (Test-Path (Join-Path $ProjectDir "extension.yaml.template"))) {
     throw "extension.yaml introuvable."
 }
 
-if (-not (Test-Path $ThemeDir)) {
-    throw "Dossier du thème introuvable : $ThemeDir"
+if (-not (Test-Path $ThemeSourceDir)) {
+    throw "Dossier du thème introuvable : $ThemeSourceDir"
 }
 
+
+# ----------------------------------------------------------------------
+# Version de l'addon
+# ----------------------------------------------------------------------
+$VersionFile = Join-Path $ProjectDir "VERSION"
+
+if (-not (Test-Path $VersionFile)) {
+    throw "Fichier VERSION introuvable : $VersionFile"
+}
+
+$Version = (Get-Content $VersionFile -Raw).Trim()
+
+if ($Version -notmatch '^\d+\.\d+\.\d+$') {
+    throw "Version invalide dans VERSION : '$Version'"
+}
+
+Write-Host "Version : $Version"
 
 # ----------------------------------------------------------------------
 # Nettoyage
@@ -46,6 +64,7 @@ Remove-Item $PackageDir -Recurse -Force -ErrorAction SilentlyContinue
 
 New-Item -ItemType Directory -Path $PackageDir -Force | Out-Null
 New-Item -ItemType Directory -Path $ExtensionPackageDir -Force | Out-Null
+New-Item -ItemType Directory -Path $ThemePackageDir -Force | Out-Null
 
 # On conserve bin\Release pour la sortie finale.
 New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
@@ -84,17 +103,20 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host ""
 Write-Host "=== Préparation de l'extension ==="
 
-Copy-Item `
-    (Join-Path $ProjectDir "extension.yaml") `
-    $ExtensionPackageDir `
-    -Force
+
+$ExtensionManifest = Get-Content `
+    (Join-Path $ProjectDir "extension.yaml.template") `
+    -Raw
+$ExtensionManifest = $ExtensionManifest.Replace('$Version', $Version)
+$ExtensionManifest |
+    Set-Content `
+        (Join-Path $ExtensionPackageDir "extension.yaml") `
+        -Encoding UTF8
 
 $DllPath = Join-Path $ReleaseDir "net462\GameUpdateStatus.dll"
-
 if (-not (Test-Path $DllPath)) {
     throw "DLL compilée introuvable : $DllPath"
 }
-
 Copy-Item `
     $DllPath `
     $ExtensionPackageDir `
@@ -117,6 +139,30 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 
+# ----------------------------------------------------------------------
+# Préparation du package thème
+# ----------------------------------------------------------------------
+
+Write-Host ""
+Write-Host "=== Préparation du thème Desktop ==="
+
+$ThemeStagingDir = Join-Path $ThemePackageDir "Game Update Status"
+
+Copy-Item `
+    $ThemeSourceDir `
+    $ThemeStagingDir `
+    -Recurse `
+    -Force
+
+$ThemeManifest = Get-Content `
+    (Join-Path $ThemeSourceDir "theme.yaml.template") `
+    -Raw
+$ThemeManifest = $ThemeManifest.Replace('$Version', $Version)
+$ThemeManifest |
+    Set-Content `
+        (Join-Path $ThemeStagingDir "theme.yaml") `
+        -Encoding UTF8
+
 
 # ----------------------------------------------------------------------
 # Packaging .pthm
@@ -126,7 +172,7 @@ Write-Host ""
 Write-Host "=== Packaging .pthm ==="
 
 & $Toolbox pack `
-    $ThemeDir `
+    $ThemeStagingDir `
     $ReleaseDir
 
 if ($LASTEXITCODE -ne 0) {

@@ -1,6 +1,6 @@
 Id: GameUpdateStatus_Playnite
 Name: Game Update Status
 Author: Yann
-Version: 1.0.0
+Version: $Version
 Module: GameUpdateStatus.dll
 Type: GenericPlugin
