@@ -181,7 +181,7 @@ namespace GameUpdateStatus
                 {
                     string json = reader.ReadToEnd();
 
-                    return ExtractPublicBuildId(json, appId);
+                    return ExtractPublicBuildId(json);
                 }
             }
             catch (Exception ex)
@@ -194,7 +194,7 @@ namespace GameUpdateStatus
             }
         }
 
-        private string ExtractPublicBuildId(string json, string appId)
+        private string ExtractPublicBuildId(string json)
         {
             // On cherche :
             // "public": {

@@ -5,6 +5,7 @@ $ProjectDir = $PSScriptRoot
 $ProjectFile = Join-Path $ProjectDir "GameUpdateStatus.csproj"
 $Toolbox = Join-Path $env:LOCALAPPDATA "Playnite\Toolbox.exe"
 
+$ResourcesDir = Join-Path $ProjectDir "resources"
 $BinDir = Join-Path $ProjectDir "bin"
 $ReleaseDir = Join-Path $BinDir "Release"
 $PackageDir = Join-Path $BinDir "Package"
@@ -121,6 +122,13 @@ Copy-Item `
     $DllPath `
     $ExtensionPackageDir `
     -Force
+
+Copy-item `
+    -Force `
+    -Recurse `
+    -Verbose $ResourcesDir `
+    -Destination $ExtensionPackageDir
+
 
 
 # ----------------------------------------------------------------------
