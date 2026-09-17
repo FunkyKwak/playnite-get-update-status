@@ -8,17 +8,27 @@ A [Playnite](https://playnite.link/) extension that displays the update status o
 
 Game Update Status displays a small status indicator next to games in Playnite:
 
-| Indicator | Status           |
-| --------- | ---------------- |
-| 🟢        | Up to date       |
-| 🟠        | Update available |
-| ⚪        | Unknown          |
-
-Games that are not installed do not display an indicator.
+| Indicator | Status           | Details              |
+| --------- | ---------------- | -------------------- |
+| 🟢        | Up to date       | The local build matches the current public build |
+| 🟠        | Update available | A newer public Steam build is available |
+| ⚪        | Unknown          | The update status could not be determined yet (reason appears in tooltip) |
+|           | Not installed     | The game is not installed locally |
 
 The extension currently supports games on the following sources :
 - Steam
 - Epic
+
+
+## Installation
+
+The extension and theme are designed to work together.
+
+1. [Install the extension](https://playnite.link/addons.html#GameUpdateStatus)
+2. [Install the theme](https://playnite.link/addons.html#GameUpdateStatus_Theme)
+
+
+![Téléchargements GitHub](https://img.shields.io/github/downloads/FunkyKwak/playnite-get-update-status/total)
 
 ## How it works
 
@@ -29,67 +39,11 @@ For each installed Steam game, it compares:
 * the locally installed build ID;
 * the current public build ID.
 
-The result is cached locally to avoid performing unnecessary checks.
+The result is cached locally in Playnite's extension data directory.
+The cache is used to prevent checking public information every time Playnite refreshes the game view.
 
 By default, the cache is refreshed every **30 minutes**.
 
-## Requirements
-
-* [Playnite](https://playnite.link/) **10.x**
-* Windows
-* Steam
-* The **Game Update Status** Desktop theme
-
-The extension is currently designed for **Playnite 10** and is not intended for Playnite 11.
-
-## Installation
-
-Download the latest release from the [GitHub Releases](https://github.com/) page.
-
-Each release contains two files:
-
-```text
-GameUpdateStatus_<version>.pext
-GameUpdateStatus_<version>.pthm
-```
-
-### 1. Install the extension and the Theme
-
-1. Double-clic on the `.pext` file, the extension will be installed on Playnite, and it will restart
-2. Double-clic on the `.pthm` file, the extension will be installed on Playnite, and it will restart
-
-The extension and theme are designed to work together.
-
-## Updating
-
-When a new version is released, install the new `.pext` and `.pthm` files.
-
-The extension and theme use the same version number and are released together.
-The plugin performs the update checks and exposes the status to the theme. The Desktop theme is responsible for displaying the status indicator.
-
-
-## Status information
-
-The extension distinguishes between four states internally:
-
-* **Not installed** — the game is not installed locally.
-* **Unknown** — the game is installed, but its update status could not be determined yet.
-* **Up to date** — the local build matches the current public Steam build.
-* **Update available** — a newer public Steam build is available.
-
-Only the last three states can result in a visible indicator, with games that are not installed intentionally hidden.
-
-## Cache
-
-Update information is stored in Playnite's extension data directory.
-
-The cache is used to prevent checking Steam information every time Playnite refreshes the game view.
-
-The default cache duration is:
-
-```text
-30 minutes
-```
 
 ## Limitations
 
