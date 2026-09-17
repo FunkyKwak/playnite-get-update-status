@@ -1,6 +1,8 @@
 # Playnite - Game Update Status
 
-A [Playnite](https://playnite.link/) extension that displays the update status of installed Steam games directly in Playnite's Desktop theme.
+A [Playnite](https://playnite.link/) extension that displays the update status of installed games directly in Playnite's Desktop theme.
+![screenshot-grid](
+docs\images\screenshot-grid.p)ng
 
 ## Features
 
