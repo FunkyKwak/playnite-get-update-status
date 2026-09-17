@@ -28,6 +28,8 @@ The extension and theme are designed to work together.
 2. [Install the theme](https://playnite.link/addons.html#GameUpdateStatus_Theme)
 
 
+![Téléchargements GitHub](https://img.shields.io/github/downloads/FunkyKwak/playnite-get-update-status/total)
+
 ## How it works
 
 The extension checks the local Steam installation data against the current public build information available from Steam.
