@@ -1,6 +1,6 @@
 AddonId: 'GameUpdateStatus_Theme'
 Type: ThemeDesktop
-InstallerManifestUrl: https://raw.githubusercontent.com/FunkyKwak/playnite-get-update-status/main/PlayniteAddonDatabase/GameUpdateStatusThmInstaller.yaml
+InstallerManifestUrl: https://raw.githubusercontent.com/FunkyKwak/playnite-get-update-status/refs/heads/main/PlayniteAddonDatabase/GameUpdateStatusThmInstaller.yaml
 ShortDescription: 'Displays the update status of installed games directly in Playnite'
 Name: 'Game Update Status'
 Author: 'FunkyKwak'

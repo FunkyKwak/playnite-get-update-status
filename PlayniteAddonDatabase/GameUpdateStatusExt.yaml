@@ -1,6 +1,6 @@
 AddonId: 'GameUpdateStatus'
 Type: Generic
-InstallerManifestUrl: https://raw.githubusercontent.com/FunkyKwak/playnite-get-update-status/main/PlayniteAddonDatabase/GameUpdateStatusExtInstaller.yaml
+InstallerManifestUrl: https://raw.githubusercontent.com/FunkyKwak/playnite-get-update-status/refs/heads/main/PlayniteAddonDatabase/GameUpdateStatusExtInstaller.yaml
 ShortDescription: 'Displays the update status of installed games directly in Playnite'
 Name: 'Game Update Status'
 Author: 'FunkyKwak'
