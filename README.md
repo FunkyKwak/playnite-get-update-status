@@ -2,7 +2,7 @@
 
 A [Playnite](https://playnite.link/) extension that displays the update status of installed games directly in Playnite's Desktop theme.
 
-![screenshot-grid](docs\images\screenshot-grid.png)
+![screenshot-grid](/docs/images/screenshot-grid.png)
 
 ## Features
 
