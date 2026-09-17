@@ -139,7 +139,7 @@ namespace GameUpdateStatus
         /// <summary>
         /// GetPublicBuildId
         /// </summary>
-        /// <param name="key">Striniig containing catalogNamespace:appId:storeUrl</param>
+        /// <param name="key">String containing catalogNamespace:appId:storeUrl</param>
         /// <returns></returns>
         protected override async Task<string> GetPublicBuildId(string appId)
         {
