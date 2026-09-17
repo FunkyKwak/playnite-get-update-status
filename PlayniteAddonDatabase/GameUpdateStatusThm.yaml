@@ -7,8 +7,8 @@ Author: 'FunkyKwak'
 Tags: ['update', 'status']
 SourceUrl: https://github.com/FunkyKwak/playnite-get-update-status
 Screenshots:
-    - Thumbnail: https://raw.githubusercontent.com/FunkyKwak/playnite-get-update-status/main/docs/images/screenshot-grid-thumb.png
-      Image: https://raw.githubusercontent.com/FunkyKwak/playnite-get-update-status/main/docs/images/screenshot-grid.png
+    - Thumbnail: https://raw.githubusercontent.com/FunkyKwak/playnite-get-update-status/refs/heads/main/docs/images/screenshot-grid-thumb.png
+      Image: https://raw.githubusercontent.com/FunkyKwak/playnite-get-update-status/refs/heads/main/docs/images/screenshot-grid.png
 FaqTopics:
     - Name: How do I install this addon ?
       Answer: Install this extension, then install the "Game Update Status" theme, they work together to display the status icons. 
