@@ -24,8 +24,7 @@ namespace GameUpdateStatus
         private readonly EpicUpdateChecker epicChecker;
 
         private readonly Dictionary<string, UpdateStatus> statuses =
-            new Dictionary<string, UpdateStatus>(
-                StringComparer.OrdinalIgnoreCase);
+            new Dictionary<string, UpdateStatus>(StringComparer.OrdinalIgnoreCase);
 
         public event EventHandler StatusesUpdated;
         private readonly string statusFile;
@@ -97,7 +96,6 @@ namespace GameUpdateStatus
             {
                 return new UpdateStatusControl();
             }
-
             return null;
         }
 
@@ -172,14 +170,11 @@ namespace GameUpdateStatus
             {
                 if (!force && IsCacheValid())
                 {
-                    logger.Info(
-                        "Update cache still valid. No Steam check needed.");
-
+                    logger.Info("Update cache still valid. No Steam check needed.");
                     return;
                 }
 
-                logger.Info(
-                    "Update cache expired. Starting update checks.");
+                logger.Info("Update cache expired. Starting update checks.");
 
                 List<StatusEntry> results = new List<StatusEntry>();
 
@@ -188,17 +183,15 @@ namespace GameUpdateStatus
                 );
                 if (Settings.EnableSourceEpic)
                 {
+                    logger.Info("EPIC Games source enabled - checking...");
                     results.AddRange(
                         await Task.Run(() => epicChecker.Check())
                     );
                 }
 
-                if (results == null ||
-                    results.Count == 0)
+                if (results == null || results.Count == 0)
                 {
-                    logger.Warn(
-                        "Update checks returned no results.");
-
+                    logger.Warn("Update checks returned no results.");
                     return;
                 }
 
@@ -216,9 +209,7 @@ namespace GameUpdateStatus
             }
             catch (Exception ex)
             {
-                logger.Error(
-                    ex,
-                    "Steam update check failed.");
+                logger.Error(ex, "Steam update check failed.");
             }
         }
 
@@ -234,11 +225,9 @@ namespace GameUpdateStatus
                 if (!File.Exists(statusFile))
                     return false;
 
-                DateTime lastWrite =
-                    File.GetLastWriteTime(statusFile);
+                DateTime lastWrite = File.GetLastWriteTime(statusFile);
 
-                double ageMinutes =
-                    (DateTime.Now - lastWrite).TotalMinutes;
+                double ageMinutes = (DateTime.Now - lastWrite).TotalMinutes;
 
                 logger.Info(
                     "Update cache age: " +
@@ -249,10 +238,7 @@ namespace GameUpdateStatus
             }
             catch (Exception ex)
             {
-                logger.Error(
-                    ex,
-                    "Failed to check update cache.");
-
+                logger.Error(ex, "Failed to check update cache.");
                 return false;
             }
         }
@@ -262,30 +248,24 @@ namespace GameUpdateStatus
         {
             try
             {
-                string directory =
-                    Path.GetDirectoryName(statusFile);
+                string directory = Path.GetDirectoryName(statusFile);
 
                 if (!Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
 
-                string json =
-                    Serialization.ToJson(results);
+                string json = Serialization.ToJson(results);
 
                 File.WriteAllText(
                     statusFile,
                     json);
 
-                logger.Info(
-                    "Update status cache saved: " +
-                    statusFile);
+                logger.Info("Update status cache saved: " + statusFile);
             }
             catch (Exception ex)
             {
-                logger.Error(
-                    ex,
-                    "Failed to save update status cache.");
+                logger.Error(ex, "Failed to save update status cache.");
             }
         }
 
@@ -297,19 +277,13 @@ namespace GameUpdateStatus
             {
                 if (!File.Exists(statusFile))
                 {
-                    logger.Info(
-                        "Update status file not found: " +
-                        statusFile);
-
+                    logger.Info("Update status file not found: " + statusFile);
                     return;
                 }
 
-                string json =
-                    File.ReadAllText(statusFile);
+                string json = File.ReadAllText(statusFile);
 
-                var entries =
-                    Serialization.FromJson<List<StatusEntry>>(
-                        json);
+                var entries = Serialization.FromJson<List<StatusEntry>>(json);
 
                 if (entries == null)
                     return;
@@ -333,9 +307,7 @@ namespace GameUpdateStatus
             }
             catch (Exception ex)
             {
-                logger.Error(
-                    ex,
-                    "Failed to load update status file.");
+                logger.Error(ex, "Failed to load update status file.");
             }
         }
 
