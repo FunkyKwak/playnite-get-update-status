@@ -1,4 +1,6 @@
-# Playnite - Game Update Status
+# Playnite - Game Update Status <img align="left" width="80" height="80" src="/docs/images/icon.png" alt="Extension icon">
+
+<br/>
 
 A [Playnite](https://playnite.link/) extension that displays the update status of installed games directly in Playnite's Desktop theme.
 
