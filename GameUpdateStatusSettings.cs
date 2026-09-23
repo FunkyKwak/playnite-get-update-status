@@ -8,21 +8,21 @@ namespace GameUpdateStatus
         private GameUpdateStatusPlugin plugin;
 
 
-        private int cacheDurationMinutes = 30;
+        private int cacheDurationMinutes;
         public int CacheDurationMinutes
         {
             get => cacheDurationMinutes;
             set => SetValue(ref cacheDurationMinutes, value);
         }
 
-        private bool showRedDotOnUnsupportedSource = true;
+        private bool showRedDotOnUnsupportedSource;
         public bool ShowRedDotOnUnsupportedSource
         {
             get => showRedDotOnUnsupportedSource;
             set => SetValue(ref showRedDotOnUnsupportedSource, value);
         }
 
-        private bool enableSourceEpic = true;
+        private bool enableSourceEpic;
         public bool EnableSourceEpic
         {
             get => enableSourceEpic;
@@ -61,6 +61,7 @@ namespace GameUpdateStatus
         public void EndEdit()
         {
             plugin.SavePluginSettings(this);
+            plugin.ReloadSettings();
             plugin.RefreshStatusControls();
         }
 

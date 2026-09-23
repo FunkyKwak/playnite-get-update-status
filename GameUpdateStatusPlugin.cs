@@ -160,6 +160,17 @@ namespace GameUpdateStatus
             return (sourceName ?? "Unknown") + ":" + (gameId ?? string.Empty);
         }
 
+
+        public void ReloadSettings()
+        {
+            Settings = LoadPluginSettings<GameUpdateStatusSettings>();
+
+            if (Settings == null)
+            {
+                Settings = new GameUpdateStatusSettings(this);
+            }
+        }
+
         public async void ForceCheckForUpdates()
         {
             await CheckForUpdatesAsync(true);
