@@ -112,7 +112,8 @@ namespace GameUpdateStatus
                 return new UpdateStatusComponent(status);
             }
 
-            return new UpdateStatusComponent(UpdateStatus.Unknown);
+            // Games not in manifest files are considered not installed 
+            return new UpdateStatusComponent(UpdateStatus.NotInstalled);
         }
 
         private static string GetSupportedSource(string sourceName)

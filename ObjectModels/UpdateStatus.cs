@@ -39,8 +39,8 @@ namespace GameUpdateStatus
                 case UpdateStatus.NotInstalled:
                     StatusBrush = Brushes.Red;
                     StatusText = statusText ?? "Non installé";
-                    Visibility = Visibility.Visible;
-                    // Visibility = Visibility.Collapsed;
+                    // Visibility = Visibility.Visible;
+                    Visibility = Visibility.Collapsed;
                     break;
 
                 case UpdateStatus.Unknown:

@@ -89,7 +89,7 @@ namespace GameUpdateStatus.Controls
             UpdateStatusComponent status = new UpdateStatusComponent(UpdateStatus.Unknown);
             try    
             {
-                status = GameUpdateStatusPlugin.Instance?.GetStatus(game) ?? new UpdateStatusComponent(UpdateStatus.Unknown);
+                status = GameUpdateStatusPlugin.Instance?.GetStatus(game) ?? new UpdateStatusComponent(UpdateStatus.Unknown, "L'extension \"Game update status\" n'est pas joignable actuellement");
             }
             catch (Exception)
             {
