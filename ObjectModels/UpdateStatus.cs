@@ -19,7 +19,7 @@ namespace GameUpdateStatus
         public Brush StatusBrush { get; set; }
         public Visibility Visibility { get; set; }
 
-        public UpdateStatusComponent(UpdateStatus status, string statusText = null)
+        public UpdateStatusComponent(UpdateStatus status, string statusText = null, Visibility? visibility = null)
         {
             Status = status;
             switch (status)
@@ -27,27 +27,27 @@ namespace GameUpdateStatus
                 case UpdateStatus.UpToDate:
                     StatusBrush = Brushes.LimeGreen;
                     StatusText = statusText ?? "À jour";
-                    Visibility = Visibility.Visible;
+                    Visibility = visibility ?? Visibility.Visible;
                     break;
 
                 case UpdateStatus.UpdateAvailable:
                     StatusBrush = Brushes.Orange;
                     StatusText = statusText ?? "Mise à jour disponible";
-                    Visibility = Visibility.Visible;
+                    Visibility = visibility ?? Visibility.Visible;
                     break;
 
                 case UpdateStatus.NotInstalled:
-                    StatusBrush = Brushes.Red;
+                    StatusBrush = Brushes.Gray;
                     StatusText = statusText ?? "Non installé";
                     // Visibility = Visibility.Visible;
-                    Visibility = Visibility.Collapsed;
+                    Visibility = visibility ?? Visibility.Collapsed;
                     break;
 
                 case UpdateStatus.Unknown:
                 default:
                     StatusBrush = Brushes.Gray;
                     StatusText = statusText ?? "État inconnu";
-                    Visibility = Visibility.Visible;
+                    Visibility = visibility ?? Visibility.Visible;
                     break;
             };
         }

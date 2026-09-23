@@ -9,13 +9,14 @@ using Playnite.SDK.Plugins;
 using GameUpdateStatus.Controls;
 using Playnite.SDK.Events;
 using Playnite.SDK.Data;
+using System.Windows;
 
 namespace GameUpdateStatus
 {
     public class GameUpdateStatusPlugin : GenericPlugin
     {
         public const string ExtensionName = "GameUpdateStatus";
-
+        
         public static GameUpdateStatusPlugin Instance { get; private set; }
 
         private readonly ILogger logger;
@@ -29,20 +30,35 @@ namespace GameUpdateStatus
         public event EventHandler StatusesUpdated;
         private readonly string statusFile;
 
-        private const int CacheDurationMinutes = 30;
-
         public override Guid Id =>
             Guid.Parse("6D8E4F57-3B19-4A61-A2F4-8D0C5B9A7E21");
 
-        public GameUpdateStatusPlugin(IPlayniteAPI api)
-            : base(api)
-        {
-            Instance = this;
 
+        public GameUpdateStatusSettings Settings;
+        public override ISettings GetSettings(bool firstRunSettings)
+        {
+            return new GameUpdateStatusSettings(this);
+        }
+
+        public override UserControl GetSettingsView(bool firstRunSettings)
+        {
+            return new GameUpdateStatusSettingsView();
+        }
+
+        public GameUpdateStatusPlugin(IPlayniteAPI api) : base(api)
+        {
+            Properties = new GenericPluginProperties
+            {
+                HasSettings = true
+            };
+
+            Instance = this;
+            Settings = (GameUpdateStatusSettings)GetSettings(false);
             logger = LogManager.GetLogger();
 
             steamChecker = new SteamUpdateChecker(logger);
-            epicChecker = new EpicUpdateChecker(logger, api);
+            if (Settings.EnableSourceEpic)
+                epicChecker = new EpicUpdateChecker(logger, api);
 
             statusFile = Path.Combine(
                 GetPluginUserDataPath(),
@@ -93,7 +109,7 @@ namespace GameUpdateStatus
             string sourceName = GetSupportedSource(game.Source?.Name);
 
             if (string.IsNullOrWhiteSpace(sourceName))
-                return new UpdateStatusComponent(UpdateStatus.NotInstalled, "Source non supportée (" + game.Source?.Name + ")");
+                return new UpdateStatusComponent(UpdateStatus.NotInstalled, "Source non supportée (" + game.Source?.Name + ")", Settings.ShowRedDotOnUnsupportedSource ? Visibility.Visible : Visibility.Collapsed);
 
             if (sourceName == "Manual")
                 return new UpdateStatusComponent(UpdateStatus.UpToDate, "Jeu ajouté manuellement (toujours à jour)");
@@ -146,11 +162,15 @@ namespace GameUpdateStatus
             return (sourceName ?? "Unknown") + ":" + (gameId ?? string.Empty);
         }
 
-        private async Task CheckForUpdatesAsync()
+        public async void ForceCheckForUpdates()
+        {
+            await CheckForUpdatesAsync(true);
+        }
+        private async Task CheckForUpdatesAsync(bool force = false)
         {
             try
             {
-                if (IsCacheValid())
+                if (!force && IsCacheValid())
                 {
                     logger.Info(
                         "Update cache still valid. No Steam check needed.");
@@ -166,9 +186,12 @@ namespace GameUpdateStatus
                 results.AddRange(
                     await Task.Run(() => steamChecker.Check())
                 );
-                results.AddRange(
-                    await Task.Run(() => epicChecker.Check())
-                );
+                if (Settings.EnableSourceEpic)
+                {
+                    results.AddRange(
+                        await Task.Run(() => epicChecker.Check())
+                    );
+                }
 
                 if (results == null ||
                     results.Count == 0)
@@ -189,7 +212,7 @@ namespace GameUpdateStatus
                 // Recharge le dictionnaire utilisé par les contrôles.
                 LoadStatusFile();
                 
-                StatusesUpdated?.Invoke(this, EventArgs.Empty);
+                RefreshStatusControls();
             }
             catch (Exception ex)
             {
@@ -197,6 +220,11 @@ namespace GameUpdateStatus
                     ex,
                     "Steam update check failed.");
             }
+        }
+
+        public void RefreshStatusControls()
+        {
+            StatusesUpdated?.Invoke(this, EventArgs.Empty);
         }
 
         private bool IsCacheValid()
@@ -217,7 +245,7 @@ namespace GameUpdateStatus
                     Math.Round(ageMinutes, 1) +
                     " minutes.");
 
-                return ageMinutes < CacheDurationMinutes;
+                return ageMinutes < Settings.CacheDurationMinutes;
             }
             catch (Exception ex)
             {
