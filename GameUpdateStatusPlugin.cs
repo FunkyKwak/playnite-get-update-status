@@ -107,7 +107,7 @@ namespace GameUpdateStatus
             string sourceName = GetSupportedSource(game.Source?.Name);
 
             if (string.IsNullOrWhiteSpace(sourceName))
-                return new UpdateStatusComponent(UpdateStatus.NotInstalled, "Source non supportée (" + game.Source?.Name + ")", Settings.ShowRedDotOnUnsupportedSource ? Visibility.Visible : Visibility.Collapsed);
+                return new UpdateStatusComponent(UpdateStatus.Unsupported, game.Source?.Name, Settings.ShowDotOnUnsupportedSource ? Visibility.Visible : Visibility.Collapsed);
 
             if (sourceName == "Manual")
                 return new UpdateStatusComponent(UpdateStatus.UpToDate, "Jeu ajouté manuellement (toujours à jour)");

@@ -15,11 +15,11 @@ namespace GameUpdateStatus
             set => SetValue(ref cacheDurationMinutes, value);
         }
 
-        private bool showRedDotOnUnsupportedSource;
-        public bool ShowRedDotOnUnsupportedSource
+        private bool showDotOnUnsupportedSource;
+        public bool ShowDotOnUnsupportedSource
         {
-            get => showRedDotOnUnsupportedSource;
-            set => SetValue(ref showRedDotOnUnsupportedSource, value);
+            get => showDotOnUnsupportedSource;
+            set => SetValue(ref showDotOnUnsupportedSource, value);
         }
 
         private bool enableSourceEpic;
@@ -33,7 +33,7 @@ namespace GameUpdateStatus
         public GameUpdateStatusSettings()
         {
             EnableSourceEpic = true;
-            ShowRedDotOnUnsupportedSource = true;
+            ShowDotOnUnsupportedSource = true;
             CacheDurationMinutes = 30;
         }
         public GameUpdateStatusSettings(GameUpdateStatusPlugin plugin)
@@ -45,7 +45,7 @@ namespace GameUpdateStatus
             if (savedSettings != null)
             {
                 EnableSourceEpic = savedSettings.EnableSourceEpic;
-                ShowRedDotOnUnsupportedSource = savedSettings.ShowRedDotOnUnsupportedSource;
+                ShowDotOnUnsupportedSource = savedSettings.ShowDotOnUnsupportedSource;
                 CacheDurationMinutes = savedSettings.CacheDurationMinutes;
             }
         }

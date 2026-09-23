@@ -2,29 +2,33 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <StackPanel Margin="10">
+    <StackPanel Margin="30">
 
         <CheckBox
-            Content="Enable Epic update status"
+            Content="Activer la vérification des mises à jour des jeux Epic"
             IsChecked="{Binding EnableSourceEpic}"
-            Margin="0,0,0,10" />
+            Margin="0,0,0,20" />
 
         <CheckBox
-            Content="Show red dot on unsupported sources"
-            IsChecked="{Binding ShowRedDotOnUnsupportedSource}"
-            Margin="0,0,0,10" />
+            Content="Afficher le point rouge sur les sources non supportées"
+            IsChecked="{Binding ShowDotOnUnsupportedSource}"
+            Margin="0,0,0,20" />
 
-        <TextBox
-            Text="{Binding CacheDurationMinutes}"
-            Width="100"
-            HorizontalAlignment="Left"/>
-            
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+            <TextBlock>Durée du cache :</TextBlock>
+            <TextBox
+                Text="{Binding CacheDurationMinutes}"
+                Width="100"
+                Margin="10,0,10,0"/>
+            <TextBlock>min</TextBlock>
+        </StackPanel>
+
         <Button
-            Content="Vériifier les mises à jour maintenant"
+            Content="Vérifier les mises à jour maintenant"
             Click="CheckForUpdates_Click"
-            Width="180"
+            Width="250"
             HorizontalAlignment="Left"
-            Margin="0,10,0,0" />
+            Margin="0,0,0,20" />
 
     </StackPanel>
 

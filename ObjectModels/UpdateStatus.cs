@@ -6,7 +6,9 @@ namespace GameUpdateStatus
     public enum UpdateStatus
     {
         NotInstalled,
+        Error,
         Unknown,
+        Unsupported,
         UpToDate,
         UpdateAvailable
     }
@@ -41,6 +43,18 @@ namespace GameUpdateStatus
                     StatusText = statusText ?? "Non installé";
                     // Visibility = Visibility.Visible;
                     Visibility = visibility ?? Visibility.Collapsed;
+                    break;
+
+                case UpdateStatus.Unsupported:
+                    StatusBrush = Brushes.Red;
+                    StatusText = $"Source non supportée ({statusText})";
+                    Visibility = visibility ?? Visibility.Visible;
+                    break;
+
+                case UpdateStatus.Error:
+                    StatusBrush = Brushes.Red;
+                    StatusText = statusText ?? "Erreur inconnue";
+                    Visibility = visibility ?? Visibility.Visible;
                     break;
 
                 case UpdateStatus.Unknown:
